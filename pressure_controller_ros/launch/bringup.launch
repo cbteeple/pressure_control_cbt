@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<launch>
+
+
+<!-- To use this   -->
+
+<!-- get the arguments from  -->
+<arg name="profile" default="default" doc="Configuration profile to use" />
+
+
+<!-- Load controller settings -->
+  <group>
+  	<!-- Start the main serial sender -->
+  	<node name="pressure_control_server_node" pkg="pressure_controller_ros" type="command_server.py" respawn="false"
+    	output="screen">
+    	<rosparam file="$(find pressure_controller_ros)/config/serial_config.yaml" command="load"/>
+    </node>
+
+    <!-- Load the config node and settings -->
+    <node name="config_node" pkg="pressure_controller_ros" type="config.py" respawn="false"
+    	output="screen">
+    	<rosparam file="$(find pressure_controller_ros)/config/$(arg profile).yaml" command="load"/>
+    </node>
+  </group>
+
+
+</launch>
