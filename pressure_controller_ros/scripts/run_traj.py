@@ -18,7 +18,10 @@ import os
 import numbers
 import numpy as np
 import serial_coms
+from pynput.keyboard import Key, Listener
 
+
+restartFlag = False
 
 
 class trajSender:
@@ -31,23 +34,35 @@ class trajSender:
         all_settings = rospy.get_param(rospy.get_name())
         self.data_back = all_settings.get("data_back")
 
-        
-
-
-    def start_traj(self):
         self.send_command("_flush",[])
         self.send_command("off",[])
         self.send_command("_flush",[])
         self.send_command("mode",2)
+
+        
+
+
+    def start_traj(self):
         self.send_command("trajstart",[])
         if self.data_back:
             self.send_command("on",[],wait_for_ack=False)
 
-            while True:
-                try:
+        self.spin()
+
+    
+    def spin(self):
+        global restartFlag
+        while True:
+            try:
+                if self.data_back:
                     self.send_command("_read",[])
-                except KeyboardInterrupt:
+
+                if restartFlag is True:
+                    restartFlag = False
+                    self.start_traj()
                     break
+            except KeyboardInterrupt:
+                break
 
 
             
@@ -67,6 +82,7 @@ class trajSender:
 
       
     def shutdown(self):
+        print("_Stopping trajectory follower")
         self.send_command("off",[],wait_for_ack=False)
         self.send_command("echo",True)
         self.send_command("trajstop",[])
@@ -77,11 +93,35 @@ class trajSender:
 
 
 
+def on_press(key):
+    pass
+
+
+def on_release(key):
+    global restartFlag
+    if key == Key.space:
+        print('_RESTART')
+        restartFlag =True
+
+
+
 
 if __name__ == '__main__':
     try:
+
+        listener = Listener(
+            on_press=on_press,
+            on_release=on_release)
+        listener.start()
+
         rospy.init_node('run_traj_node', disable_signals=True)
         node = trajSender()
+
+        print("\nControls:")
+        print("\tSPACE  - Restart trajectory")
+        print("\tCTRL-C - Stop running")
+        print('')
+
         node.start_traj()
         node.shutdown()
         
