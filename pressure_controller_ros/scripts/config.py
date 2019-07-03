@@ -50,7 +50,13 @@ class configSender:
             
             self.send_command("time",int(self.config.get("data_loop_time")))
             self.send_command("valve",0)
-            self.send_command("mode",1)
+
+            if self.config.get("transitions")>0:
+                self.send_command("mode",3)
+            else:
+                self.send_command("mode",1)
+
+            
             self.send_command("echo",bool(self.config.get("echo")))
             self.send_command("save",[])
 

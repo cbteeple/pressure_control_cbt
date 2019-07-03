@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+
+<!-- To use this   -->
+
+<!-- get the arguments from  -->
+<arg name="setpoint" default="[0]" doc="pressure setting" />
+<arg name="transition_time" default="0.0" doc="number of seconds to transition" />
+
+
+<!-- Load controller settings -->
+  <group>
+
+    <!-- Load the config node and settings -->
+    <node name="setpoint_node" pkg="pressure_controller_ros" type="set_pressure.py" respawn="false"
+    	output="screen">
+      	<rosparam param="setpoints" subst_value="True">$(arg setpoint)</rosparam>
+      	<param name="transition_time" type="double" value="$(arg transition_time)" />
+    </node>
+  </group>
+
+
+</launch>

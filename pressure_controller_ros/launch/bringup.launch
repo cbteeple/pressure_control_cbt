@@ -21,6 +21,11 @@
     	output="screen">
     	<rosparam file="$(find pressure_controller_ros)/config/$(arg profile).yaml" command="load"/>
     </node>
+
+    <!-- Load the setpoint node and settings -->
+    <node name="setpoint_server_node" pkg="pressure_controller_ros" type="setpoint_server.py" respawn="false"
+      output="screen">
+    </node>
   </group>
 
 

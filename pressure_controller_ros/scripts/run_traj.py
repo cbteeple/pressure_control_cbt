@@ -87,7 +87,7 @@ class trajSender:
         self.send_command("echo",True)
         self.send_command("trajstop",[])
         self.send_command("mode",1)
-        self.send_command("set",0)
+        self.send_command("set",[0,0])
         self.send_command("echo",False)
         self._client.cancel_all_goals()
 
