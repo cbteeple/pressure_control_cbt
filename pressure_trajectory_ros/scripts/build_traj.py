@@ -83,6 +83,11 @@ class trajBuilder:
         prefix = traj_setpoints.get("prefix",None)
         suffix = traj_setpoints.get("suffix",None)
 
+        if isinstance(prefix,str):
+            prefix=None
+        if isinstance(suffix,str):
+            suffix=None
+
 
         channels =  self.config.get("channels")
         num_cycles = float(self.config.get("num_cycles"))

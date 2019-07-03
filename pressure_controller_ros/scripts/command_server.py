@@ -36,7 +36,7 @@ class CommandAction(object):
     def execute_cb(self, goal):
 
         # helper variables
-        r = rospy.Rate(100)
+        r = rospy.Rate(3000)
         success = False
         
         # Initiatilize the feedback
@@ -50,6 +50,14 @@ class CommandAction(object):
             if "flush"  in goal.command:
                 rospy.loginfo('%s: Flushing serial coms' % (self._action_name))
                 serial_coms.flushAll(self.ser)
+
+            elif "read" in goal.command:
+                ack="_"
+                while ack is not None:
+                    ack = serial_coms.readStuff(self.ser)
+                    #self._as.publish_feedback(self._feedback)
+                    if ack is not None:
+                        print(ack)
 
             self._feedback.success = True
             self._as.publish_feedback(self._feedback)
@@ -80,7 +88,7 @@ class CommandAction(object):
                         ack = serial_coms.readStuff(self.ser)
                         self._as.publish_feedback(self._feedback)
                         print(ack)
-                        r.sleep()
+                        #r.sleep()
                     
                 self._feedback.success = True
     
@@ -89,7 +97,7 @@ class CommandAction(object):
           
         if self._feedback.success:
             self._result.success = self._feedback.success
-            rospy.loginfo('%s: Succeeded' % self._action_name)
+            #rospy.loginfo('%s: Succeeded' % self._action_name)
             self._as.set_succeeded(self._result)
         
 if __name__ == '__main__':
