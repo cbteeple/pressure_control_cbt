@@ -165,9 +165,12 @@ class SerialReadThreaded:
 
 
 
+
+
 '''
 A more efficient serial readline function from:
 https://github.com/pyserial/pyserial/issues/216#issuecomment-369414522
+'''
 '''
 class ReadLine:
 	def __init__(self, s):
@@ -195,3 +198,5 @@ class ReadLine:
 				return r
 			else:
 				self.buf.extend(data)
+
+'''
