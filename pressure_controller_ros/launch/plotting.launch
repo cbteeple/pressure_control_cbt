@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+
+<!-- Start the main plotting interface and console-->
+<group>
+  <node name="pressure_plot"
+        pkg="rqt_multiplot"
+        type="rqt_multiplot"
+        args="--force-discover --multiplot-config /home/clark/Documents/ros_testing_ws/rqt_multiplot.xml --multiplot-run-all" />
+
+  <node name ="console" pkg="rqt_console" type="rqt_console" />
+</group>
+
+
+</launch>

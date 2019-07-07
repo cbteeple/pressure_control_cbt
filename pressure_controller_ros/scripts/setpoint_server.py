@@ -75,9 +75,8 @@ class SetpointAction(object):
 
         
 if __name__ == '__main__':
-    print("Starting Server")
     rospy.init_node('set_setpoints')
-    print("Node Initiatilized")
+    print("SETPOINT SERVER: Node Initiatilized (%s)"%(rospy.get_name()))
     server = SetpointAction(rospy.get_name())
-    print("Server Spinning")
+    print("SETPOINT SERVER: Ready!")
     rospy.spin()

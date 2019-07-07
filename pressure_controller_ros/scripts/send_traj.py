@@ -32,6 +32,7 @@ class trajSender:
         
         # Get trajectory from the parameter server
         all_settings = rospy.get_param(rospy.get_name())
+        self.DEBUG = all_settings.get("DEBUG",False)
         self.traj = all_settings.get("setpoints")
         self.wrap = all_settings.get("wrap")  
 
@@ -77,9 +78,20 @@ class trajSender:
         self.send_command("trajconfig" , [0,len(self.traj),self.wrap])
 
         # Send the whole trajectory
+        start_time = time.time()
+        len_traj = len(self.traj)
         for idx, entry in enumerate(self.traj):
             # Send each line to the action server and wait until response
             self.send_command('trajset',entry)
+            if not idx%5:
+                print('\r'+"TRAJECTORY FOLLOWER: Uploading Trajectory, %0.1f"%((idx+1)/float(len_traj)*100) +'%' +" complete", end='')
+                sys.stdout.flush()
+
+        end_time = time.time()
+
+        print('\r',end='')
+        sys.stdout.write("\033[K") #clear line
+        print("TRAJECTORY FOLLOWER: Uploading Trajectory, Done in %0.2f sec"%(end_time - start_time))
 
 
         self.send_command("echo",False)
@@ -111,6 +123,7 @@ if __name__ == '__main__':
     try:
         rospy.init_node('send_traj_node')
         profile = rospy.get_param(rospy.get_name()+'/traj_profile')
+        print("TRAJECTORY FOLLOWER: Uploading Trajectory '%s'"%(profile))  
         node = trajSender(profile)
         node.send_traj()
         node.shutdown()

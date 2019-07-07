@@ -80,9 +80,14 @@ class trajBuilder:
 
 
         traj_setpoints = self.config.get("setpoints",None)
-        prefix = traj_setpoints.get("prefix",None)
-        suffix = traj_setpoints.get("suffix",None)
 
+        if isinstance(traj_setpoints,dict):
+            prefix = traj_setpoints.get("prefix",None)
+            suffix = traj_setpoints.get("suffix",None)
+        else:
+            prefix=None
+            suffix=None
+            
         if isinstance(prefix,str):
             prefix=None
         if isinstance(suffix,str):

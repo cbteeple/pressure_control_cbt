@@ -35,15 +35,20 @@ class trajSender:
         self.data_back = all_settings.get("data_back")
 
         self.send_command("_flush",[])
-        self.send_command("off",[])
+        self.send_command("off",[],wait_for_ack=False)
         self.send_command("_flush",[])
-        self.send_command("mode",2)
+        self.send_command("mode",2,wait_for_ack=False)
+        self.r = rospy.Rate(100)
 
         
 
+    def restart_traj(self):
+        self.send_command("trajstart",[],wait_for_ack=False)
+        self.spin()
+
 
     def start_traj(self):
-        self.send_command("trajstart",[])
+        self.send_command("trajstart",[],wait_for_ack=False)
         if self.data_back:
             self.send_command("on",[],wait_for_ack=False)
 
@@ -54,13 +59,15 @@ class trajSender:
         global restartFlag
         while True:
             try:
-                if self.data_back:
-                    self.send_command("_read",[])
+                #if self.data_back:
+                    #self.send_command("_read",[])
 
                 if restartFlag is True:
                     restartFlag = False
-                    self.start_traj()
+                    self.restart_traj()
                     break
+                self.r.sleep()
+
             except KeyboardInterrupt:
                 break
 
@@ -116,6 +123,8 @@ if __name__ == '__main__':
 
         rospy.init_node('run_traj_node', disable_signals=True)
         node = trajSender()
+
+        print("TRAJECTORY FOLLOWER")  
 
         print("\nControls:")
         print("\tSPACE  - Restart trajectory")

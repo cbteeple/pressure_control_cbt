@@ -16,15 +16,20 @@ import time
 import sys
 import os
 import numbers
+import serial_coms
 
 
 
 class configSender:
     def __init__(self):       
-        self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
+        self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction) 
         self._client.wait_for_server()
 
-        self.config = rospy.get_param(rospy.get_name())     
+        self.config = rospy.get_param(rospy.get_name())
+
+        config_name = self.config.get("profile_name","")
+
+        print("CONFIG: Sending Config Profile '%s'"%(config_name))  
 
 
     def set_config(self):
@@ -58,13 +63,13 @@ class configSender:
 
             
             self.send_command("echo",bool(self.config.get("echo")))
-            self.send_command("save",[])
+            self.send_command("save",[], wait_for_ack=False)
 
 
-    def send_command(self, command, args):
+    def send_command(self, command, args, wait_for_ack = True):
         command, args = validate_commands.go(command, args)
         # Send commands to the commader node and wait for things to be taken care of
-        goal = pressure_controller_ros.msg.CommandGoal(command=command, args=args, wait_for_ack = True)
+        goal = pressure_controller_ros.msg.CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
         self._client.send_goal(goal)
         self._client.wait_for_result()
 
@@ -103,10 +108,11 @@ class configSender:
 
 if __name__ == '__main__':
     try:
-        rospy.init_node('command_client')
+        rospy.init_node('config_node', disable_signals=True)
         node = configSender()
         node.set_config()
         node.shutdown()
+        print("CONFIG: Config Sent") 
 
 
     except rospy.ROSInterruptException:
