@@ -6,7 +6,7 @@
   <node name="pressure_plot"
         pkg="rqt_multiplot"
         type="rqt_multiplot"
-        args="--force-discover --multiplot-config /home/clark/Documents/ros_testing_ws/rqt_multiplot.xml --multiplot-run-all" />
+        args="--force-discover --multiplot-config $(find pressure_controller_ros)/config/plotting/4channels.xml --multiplot-run-all" />
 
   <node name ="console" pkg="rqt_console" type="rqt_console" />
 </group>
