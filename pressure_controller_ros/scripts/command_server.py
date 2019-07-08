@@ -33,9 +33,6 @@ class CommandAction(object):
         if not self.ser.connected:
             raise Exception("Serial port was not connected")
 
-        #__________________________________________________________
-        # THIS WILL MOVE TO SEPARATE SERIAL READER PROCESS
-
         # Start a serial reader in a second thread.
         # The polling rate only affects how often data gets read. It can be read in large blocks and doesn't take much time at all
         self.ser.start_read_thread(poll_rate=500, reading_cb=self.process_serial_in)
@@ -44,9 +41,6 @@ class CommandAction(object):
         self.data_pub = rospy.Publisher('pressure_control/pressure_data', msg.DataIn, queue_size=10)
         self.echo_pub = rospy.Publisher('pressure_control/echo', msg.Echo, queue_size=10)
         rospy.Subscriber('pressure_control/echo', msg.Echo, self.ack_waiter)
-
-        #__________________________________________________________
-
 
         # Start an actionlib server
         self._as = actionlib.SimpleActionServer('pressure_control', msg.CommandAction, execute_cb=self.execute_cb, auto_start = False)
@@ -116,12 +110,8 @@ class CommandAction(object):
             #rospy.loginfo('%s: Succeeded' % self._action_name)
             self._as.set_succeeded(self._result)
 
-    #__________________________________________________________
-    # THIS WILL MOVE TO SEPARATE SERIAL READER PROCESS
-    def process_serial_in(self, line_in):
-        if self.DEBUG:
-            print(line_in)
 
+    def process_serial_in(self, line_in):
         if not line_in:
             return
 
@@ -161,7 +151,6 @@ class CommandAction(object):
 
             self.data_pub.publish(data_in)
 
-    #__________________________________________________________
 
 
 

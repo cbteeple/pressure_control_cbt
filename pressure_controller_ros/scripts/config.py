@@ -21,7 +21,8 @@ import serial_coms
 
 
 class configSender:
-    def __init__(self):       
+    def __init__(self):
+        self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
         self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction) 
         self._client.wait_for_server()
 

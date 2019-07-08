@@ -22,6 +22,8 @@ class SetpointAction(object):
     def __init__(self, name):
         self._action_name = name
 
+        self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
+
         self._client = actionlib.SimpleActionClient('pressure_control', msg.CommandAction)
         self._client.wait_for_server()
 
@@ -44,14 +46,11 @@ class SetpointAction(object):
             self._as.set_preempted()
         else:
             #Send a setpoint command
-            print([goal.transition_time]+list(goal.setpoints))
+            rospy.logdebug([goal.transition_time]+list(goal.setpoints))
             self.send_command("set", [goal.transition_time]+list(goal.setpoints), wait_for_ack = False)
             self._feedback.sent = True                
             self._feedback.success = True
     
-        
-        
-          
         if self._feedback.success:
             self._result.success = self._feedback.success
             #rospy.loginfo('%s: Succeeded' % self._action_name)

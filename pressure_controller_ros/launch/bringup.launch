@@ -6,6 +6,7 @@
 
 <!-- get the arguments from  -->
 <arg name="profile" default="default" doc="Configuration profile to use" />
+<arg name="debug" default="False" doc="Whether debug is on" />
 
 <!-- Start the main plotting interface -->
  <include file="$(find pressure_controller_ros)/launch/plotting.launch" />
@@ -18,6 +19,7 @@
   	<node name="pressure_control_server_node" pkg="pressure_controller_ros" type="command_server.py" respawn="false"
     	output="screen">
     	<rosparam file="$(find pressure_controller_ros)/config/serial_config.yaml" command="load"/>
+      <param name="DEBUG" type="bool" value="$(arg debug)"/>
     </node>
 
     <!-- Load the config node and settings -->
@@ -25,11 +27,13 @@
     	output="screen">
     	<rosparam file="$(find pressure_controller_ros)/config/$(arg profile).yaml" command="load"/>
       <param name="profile_name" type="string" value="$(arg profile)"/>
+      <param name="DEBUG" type="bool" value="$(arg debug)"/>
     </node>
 
     <!-- Load the setpoint node and settings -->
     <node name="setpoint_server_node" pkg="pressure_controller_ros" type="setpoint_server.py" respawn="false"
       output="screen">
+      <param name="DEBUG" type="bool" value="$(arg debug)"/>
     </node>
   </group>
 
