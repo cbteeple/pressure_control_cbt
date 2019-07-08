@@ -57,7 +57,7 @@ In the "**config**" folder of the "**pressure_control_ros**" package, you can se
 
 `roslaunch pressure_controller_ros bringup.launch profile:=DEBUG`
 
-2. Upload the trajectory:
+2. In a new terminal, upload the trajectory:
 
 `roslaunch pressure_controller_ros load_traj.launch profile:=example/planar2seg_demo`
 
