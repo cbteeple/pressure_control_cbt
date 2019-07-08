@@ -37,12 +37,14 @@ To build a pressure trajectory, you can either discretize a periodic waveform, o
 
 #### Build a Trajectory
 Building a trajectory is a single command through roslaunch:
+
 `roslaunch pressure_trajectory_ros build_traj.launch profile:=example/planar2seg_demo`
 
 *Note that you don't need to include the file extension ".yaml'
 
 ### Prepare to Run the Pressure Controller
 To begin running the pressure controller, use the following command:
+
 `roslaunch pressure_controller_ros bringup.launch profile:=YOUR_CONFIG_PROFILE`
 
 In the "**config**" folder of the "**pressure_control_ros**" package, you can set up hardware configurations. the "*DEBUG.yaml*" configuration is a good place to start.
@@ -52,10 +54,15 @@ In the "**config**" folder of the "**pressure_control_ros**" package, you can se
 
 ### Run Trajectories Manually
 1. Make sure you have started the pressure control interface: 
+
 `roslaunch pressure_controller_ros bringup.launch profile:=DEBUG`
-3. Upload the trajectory:
+
+2. Upload the trajectory:
+
 `roslaunch pressure_controller_ros load_traj.launch profile:=example/planar2seg_demo`
-4. Start running the trajectory:
+
+3. Start running the trajectory:
+
 `roslaunch pressure_controller_ros run_traj.launch`
 
 ### Send Trajectories in Realtime
