@@ -59,7 +59,7 @@ class SetpointAction(object):
 
 
     def send_command(self, command, args, wait_for_ack = True):
-        command, args = validate_commands.go(command, args)
+        #command, args = validate_commands.go(command, args)
         # Send commands to the commader node and wait for things to be taken care of
         goal = msg.CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
         self._client.send_goal(goal)

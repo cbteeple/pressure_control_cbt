@@ -4,6 +4,7 @@ import serial
 import numbers
 import threading
 import rospy
+import time
 
 
 
@@ -74,6 +75,7 @@ class SerialComs:
 			raise ValueError('sendCommand expects either a list or a number')
 
 		self.s.write(command_toSend +'\n')
+
 		return command_toSend
 
 

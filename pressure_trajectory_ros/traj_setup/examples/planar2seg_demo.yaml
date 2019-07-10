@@ -20,7 +20,7 @@ config:
     waveform_min:  [0,  20,  0, 15]   #psi
 
 
-    interp_type: none   # can be: 'linear', 'cubic'
+    interp_type: none   # can be: 'linear', 'cubic', 'none'
     setpoints: # Setpoints are only used if you are doing an interpolation
         # [time, finger1, finger2, n/c, n/c]
         prefix:

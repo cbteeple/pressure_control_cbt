@@ -106,7 +106,7 @@ add_action_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES actionlib_tutorials
-  CATKIN_DEPENDS roscpp rospy std_msgs actionlib_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs actionlib_msgs rqt_multiplot
 #  DEPENDS system_lib
 )
 

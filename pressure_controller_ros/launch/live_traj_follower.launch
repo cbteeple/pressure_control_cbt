@@ -13,7 +13,7 @@
   <group>
 
     <!-- Load the config node and settings -->
-    <node name="traj_send_node" pkg="pressure_controller_ros" type="send_traj.py" respawn="false"
+    <node name="traj_follower_node" pkg="pressure_controller_ros" type="send_traj_live.py" respawn="false"
     	output="screen">
     	<rosparam file="$(find pressure_trajectory_ros)/traj_generated/$(arg profile)_raw.yaml" command="load"/>
       	<param name="traj_profile" type="str" value="$(arg profile)_raw" />

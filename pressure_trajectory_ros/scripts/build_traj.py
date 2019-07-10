@@ -26,7 +26,7 @@ class trajBuilder:
         self.config = all_settings.get("config",None)
 
         self.traj_type = str(self.settings.get("traj_type"))
-        self.subsample_num = self.config.get("subsample_num")
+        self.subsample_num = self.config.get("subsample_num")-1
 
 
 

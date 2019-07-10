@@ -33,14 +33,15 @@ class CommandAction(object):
         if not self.ser.connected:
             raise Exception("Serial port was not connected")
 
-        # Start a serial reader in a second thread.
-        # The polling rate only affects how often data gets read. It can be read in large blocks and doesn't take much time at all
-        self.ser.start_read_thread(poll_rate=500, reading_cb=self.process_serial_in)
 
         # Start some message publishers and subscribers
         self.data_pub = rospy.Publisher('pressure_control/pressure_data', msg.DataIn, queue_size=10)
         self.echo_pub = rospy.Publisher('pressure_control/echo', msg.Echo, queue_size=10)
         rospy.Subscriber('pressure_control/echo', msg.Echo, self.ack_waiter)
+
+        # Start a serial reader in a second thread.
+        # The polling rate only affects how often data gets read. It can be read in large blocks and doesn't take much time at all
+        self.ser.start_read_thread(poll_rate=500, reading_cb=self.process_serial_in)
 
         # Start an actionlib server
         self._as = actionlib.SimpleActionServer('pressure_control', msg.CommandAction, execute_cb=self.execute_cb, auto_start = False)
@@ -64,15 +65,6 @@ class CommandAction(object):
             if "flush"  in goal.command:
                 rospy.loginfo('%s: Flushing serial coms' % (self._action_name))
                 self.ser.flushAll()
-
-            elif "read" in goal.command:
-                print("NEED TO FIX READING FUNCTION IN COMMAND SERVER")
-                #ack="_"
-                #while ack is not None:
-                #    ack = self.ser.readStuff()
-                #    #self._as.publish_feedback(self._feedback)
-                #    if ack is not None:
-                #        print(ack)
 
             self._feedback.success = True
             self._as.publish_feedback(self._feedback)

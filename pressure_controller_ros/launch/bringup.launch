@@ -7,9 +7,13 @@
 <!-- get the arguments from  -->
 <arg name="profile" default="default" doc="Configuration profile to use" />
 <arg name="debug" default="False" doc="Whether debug is on" />
+<arg name="plot_profile" default="2channels_set" doc="The plotting config profile" />
+
 
 <!-- Start the main plotting interface -->
- <include file="$(find pressure_controller_ros)/launch/plotting.launch" />
+  <include file="$(find pressure_controller_ros)/launch/plotting.launch">
+    <arg name="plot_profile" value="$(arg plot_profile)"/>
+  </include>
 
 
 
