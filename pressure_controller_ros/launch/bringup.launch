@@ -26,7 +26,8 @@
       <param name="DEBUG" type="bool" value="$(arg debug)"/>
     </node>
 
-    <!-- Load the config node and settings -->
+    <!-- Load the config node and settings.
+         This will wait for the command server to be set up -->
     <node name="config_node" pkg="pressure_controller_ros" type="config.py" respawn="false"
     	output="screen">
     	<rosparam file="$(find pressure_controller_ros)/config/$(arg profile).yaml" command="load"/>
@@ -34,7 +35,8 @@
       <param name="DEBUG" type="bool" value="$(arg debug)"/>
     </node>
 
-    <!-- Load the setpoint node and settings -->
+    <!-- Load the setpoint node and settings.
+         This needs to wait for the config process to finish-->
     <node name="setpoint_server_node" pkg="pressure_controller_ros" type="setpoint_server.py" respawn="false"
       output="screen">
       <param name="DEBUG" type="bool" value="$(arg debug)"/>

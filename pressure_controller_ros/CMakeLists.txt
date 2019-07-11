@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(catkin REQUIRED COMPONENTS actionlib_msgs)
+find_package(catkin REQUIRED COMPONENTS actionlib_msgs std_msgs)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -67,6 +67,7 @@ add_action_files(
   FILES
     Command.action
     Setpoint.action
+    Run.action
 )
 
 ## Generate added messages and services with any dependencies listed here

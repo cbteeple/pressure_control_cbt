@@ -8,6 +8,7 @@ import actionlib
 
 # Brings in the messages used by the fibonacci action, including the
 # goal message and the result message.
+import std_msgs
 import pressure_controller_ros.msg
 import validate_commands
 
@@ -24,6 +25,9 @@ class trajSender:
     def __init__(self, filename):
         self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
         self._client.wait_for_server()
+        self.config_done=False
+
+        rospy.Subscriber('pressure_control/config_done', std_msgs.msg.Bool, self.wait_for_config)
 
         self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor')
 
@@ -39,6 +43,9 @@ class trajSender:
         
         self.fix_traj()
 
+
+    def wait_for_config(self,data):
+        self.config_done = data.data
 
 
     def fix_traj(self):
@@ -73,6 +80,13 @@ class trajSender:
 
 
     def send_traj(self):
+
+        #wait for the controller to be configured
+        r=rospy.Rate(30)
+        while not self.config_done:
+            r.sleep()
+
+        #Start sending the trajectory.
         self.send_command("echo",True)
         
         self.send_command("trajconfig" , [0,len(self.traj),self.wrap])
@@ -94,7 +108,7 @@ class trajSender:
         print("TRAJECTORY FOLLOWER: Uploading Trajectory, Done in %0.2f sec"%(end_time - start_time))
 
 
-        self.send_command("echo",False)
+        self.send_command("set",[0.5]+self.traj[0][2:])
 
             
 

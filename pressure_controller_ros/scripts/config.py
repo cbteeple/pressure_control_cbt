@@ -8,6 +8,7 @@ import actionlib
 
 # Brings in the messages used by the fibonacci action, including the
 # goal message and the result message.
+import std_msgs
 import pressure_controller_ros.msg
 import validate_commands
 
@@ -23,6 +24,9 @@ import serial_coms
 class configSender:
     def __init__(self):
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
+        self.donePub = rospy.Publisher('pressure_control/config_done', std_msgs.msg.Bool, queue_size=10)
+        self.donePub.publish(False)
+
         self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction) 
         self._client.wait_for_server()
 
@@ -102,6 +106,7 @@ class configSender:
 
     def shutdown(self):
         self._client.cancel_all_goals()
+        self.donePub.publish(True)
         
 
 

@@ -22,7 +22,7 @@ import numpy as np
 
 class trajSender:
     def __init__(self, filename):
-        self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
+        self._client = actionlib.SimpleActionClient('pressure_control', msg.CommandAction)
         self._client.wait_for_server()
 
         self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor')
@@ -110,7 +110,7 @@ class trajSender:
     def send_command(self, command, args, wait_for_ack=True):
         command, args = validate_commands.go(command, args)
         # Send commands to the commader node and wait for things to be taken care of
-        goal = pressure_controller_ros.msg.CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
+        goal = msg.CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
         self._client.send_goal(goal)
         self._client.wait_for_result()
 
