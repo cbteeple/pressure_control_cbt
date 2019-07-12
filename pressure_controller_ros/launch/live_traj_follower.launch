@@ -5,7 +5,7 @@
 <!-- To use this   -->
 
 <!-- get the arguments from  -->
-<arg name="profile" doc="Configuration profile to use" />
+<arg name="traj_profile" doc="Configuration profile to use" />
 <arg name="speed_factor" default="1.0" doc="the speed to run the trajectory at" />
 
 
@@ -16,7 +16,7 @@
     <node name="traj_follower_node" pkg="pressure_controller_ros" type="send_traj_live.py" respawn="false"
     	output="screen">
     	<rosparam file="$(find pressure_trajectory_ros)/traj_generated/$(arg profile)_raw.yaml" command="load"/>
-      	<param name="traj_profile" type="str" value="$(arg profile)_raw" />
+      	<param name="traj_profile" type="str" value="$(arg traj_profile)_raw" />
       	<param name="speed_factor" type="double" value="$(arg speed_factor)" />
     </node>
   </group>

@@ -21,19 +21,13 @@ import serial_coms
 from pynput.keyboard import Key, Listener
 
 
-restartFlag = False
-
 
 class trajSender:
-    def __init__(self, manual_mode):
+    def __init__(self):
         self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
         self._client.wait_for_server()
+        self._running = False
 
-        self.manual_mode=manual_mode
-
-        if not self.manual_mode:
-            rospy.Subscriber('~start_traj', std_msgs.msg.Empty, self.start_traj)
-            rospy.Subscriber('~stop_traj', std_msgs.msg.Empty, self.stop_traj)
         
         # Get trajectory from the parameter server
         all_settings = rospy.get_param(rospy.get_name())
@@ -45,47 +39,37 @@ class trajSender:
         self.send_command("mode",2,wait_for_ack=False)
         self.r = rospy.Rate(100)
 
-        
+
+        listener = Listener(
+            on_press=self.on_press,
+            on_release=self.on_release)
+        listener.start()
+
+
 
     def restart_traj(self):
         self.send_command("trajstart",[],wait_for_ack=False)
-
-        if self.manual_mode:
-            self.spin()
+        self._running = True
 
 
     def start_traj(self):
         self.send_command("trajstart",[],wait_for_ack=False)
         if self.data_back:
             self.send_command("on",[],wait_for_ack=False)
-
-        if self.manual_mode:
-            self.spin()
+        self._running = True
 
 
     def stop_traj(self):
         self.send_command("trajstop",[],wait_for_ack=False)
         self.send_command("off",[],wait_for_ack=False)
+        self._running = False
 
     
     def spin(self):
-        global restartFlag
-        while True:
-            try:
-                #if self.data_back:
-                    #self.send_command("_read",[])
+        while not rospy.is_shutdown():
+            self.r.sleep()
 
-                if restartFlag is True:
-                    restartFlag = False
-                    self.restart_traj()
-                    break
-                self.r.sleep()
-
-            except KeyboardInterrupt:
-                break
-
-
-            
+                    
 
     def send_command(self, command, args, wait_for_ack = True):
         command, args = validate_commands.go(command, args)
@@ -113,15 +97,22 @@ class trajSender:
 
 
 
-def on_press(key):
-    pass
+    def on_press(self,key):
+        pass
 
 
-def on_release(key):
-    global restartFlag
-    if key == Key.space:
-        print('_RESTART')
-        restartFlag =True
+    def on_release(self,key):
+        if key == Key.space:
+            print('_START')
+            if self._running:
+                self.restart_traj()
+            else:
+                self.start_traj()
+                
+
+        elif key == Key.alt:
+            print('_STOP')
+            self.stop_traj()
 
 
 
@@ -129,29 +120,25 @@ def on_release(key):
 if __name__ == '__main__':
     try:
 
-        manual_mode = rospy.get_param("~manual_mode",False)
-
-        if manual_mode:
-            listener = Listener(
-                on_press=on_press,
-                on_release=on_release)
-            listener.start()
-
         rospy.init_node('run_traj_node', disable_signals=True)
-        node = trajSender(manual_mode)
+        
 
-        if manual_mode:
-            print("TRAJECTORY FOLLOWER")  
+        node = trajSender()
 
-            print("\nControls:")
-            print("\tSPACE  - Restart trajectory")
-            print("\tCTRL-C - Stop running")
-            print('')
 
-            node.start_traj()
-            node.shutdown()
-        else:
-            rospy.spin()
+        print("TRAJECTORY FOLLOWER")  
+
+        print("\nControls:")
+        print("\tSPACE  - Restart trajectory")
+        print("\tALT    - Stop trajectory")
+        print("\tCTRL-C - Stop running")
+        print('')
+
+        node.spin()
+
+
+    except KeyboardInterrupt:
+        node.shutdown()
         
 
 

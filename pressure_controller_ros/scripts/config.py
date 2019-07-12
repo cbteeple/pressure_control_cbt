@@ -19,13 +19,16 @@ import os
 import numbers
 import serial_coms
 
+from bondpy import bondpy
+
 
 
 class configSender:
     def __init__(self):
+        self.bond = bondpy.Bond("wait_for_config_topic",'abc123')
+        self.bond.start()
+
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
-        self.donePub = rospy.Publisher('pressure_control/config_done', std_msgs.msg.Bool, queue_size=10)
-        self.donePub.publish(False)
 
         self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction) 
         self._client.wait_for_server()
@@ -106,7 +109,12 @@ class configSender:
 
     def shutdown(self):
         self._client.cancel_all_goals()
-        self.donePub.publish(True)
+        self.bond.break_bond()
+
+        
+
+
+        
         
 
 
@@ -123,3 +131,6 @@ if __name__ == '__main__':
 
     except rospy.ROSInterruptException:
         print("program interrupted before completion", file=sys.stderr)
+
+    except KeyboardInterrupt:
+        pass

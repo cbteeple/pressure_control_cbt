@@ -12,7 +12,7 @@
   <group>
 
     <!-- Load the config node and settings -->
-    <node name="run_traj_node" pkg="pressure_controller_ros" type="run_traj.py" respawn="false"
+    <node name="run_traj_node" pkg="pressure_controller_ros" type="run_traj_manual.py" respawn="false"
     	output="screen">
       	<param name="data_back" type="bool" value="$(arg data_back)" />
     </node>

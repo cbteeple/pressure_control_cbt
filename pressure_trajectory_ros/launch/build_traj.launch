@@ -5,7 +5,7 @@
 <!-- To use this   -->
 
 <!-- get the arguments from  -->
-<arg name="profile" doc="The trajectory to build" />
+<arg name="traj_profile" doc="The trajectory to build" />
 
 
 <!-- Load controller settings -->
@@ -13,8 +13,8 @@
     <!-- Load the config node and settings -->
     <node name="build_trajectory_node" pkg="pressure_trajectory_ros" type="build_traj.py" respawn="false"
     	output="screen">
-    	<rosparam file="$(find pressure_trajectory_ros)/traj_setup/$(arg profile).yaml" command="load"/>
-      <param name="traj_profile" type="str" value="$(arg profile)" />
+    	<rosparam file="$(find pressure_trajectory_ros)/traj_setup/$(arg traj_profile).yaml" command="load"/>
+      <param name="traj_profile" type="str" value="$(arg traj_profile)" />
     </node>
   </group>
 

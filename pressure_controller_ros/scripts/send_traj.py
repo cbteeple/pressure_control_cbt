@@ -19,20 +19,18 @@ import os
 import numbers
 import numpy as np
 
+from bondpy import bondpy
+
 
 
 class trajSender:
     def __init__(self, filename):
+        print('UPLOAD TRAJ: waiting for command server')
         self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
         self._client.wait_for_server()
-        self.config_done=False
-
-        rospy.Subscriber('pressure_control/config_done', std_msgs.msg.Bool, self.wait_for_config)
 
         self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor')
-
         self.num_channels = rospy.get_param('/config_node/channels/num_channels')
-
         
         # Get trajectory from the parameter server
         all_settings = rospy.get_param(rospy.get_name())
@@ -44,8 +42,22 @@ class trajSender:
         self.fix_traj()
 
 
-    def wait_for_config(self,data):
-        self.config_done = data.data
+    def wait_for_config(self):
+        r=rospy.Rate(10)
+        # Sends id to B using an action or a service
+        #wait for the controller to be configured
+        print('UPLOAD TRAJ: Waiting for Config to finish')
+        bond = bondpy.Bond("wait_for_config_topic", 'abc123')
+        bond.start()
+        if bond.wait_until_formed(rospy.Duration(1.0)):
+            while not bond.is_broken():
+                r.sleep()
+            
+        
+
+            
+        
+
 
 
     def fix_traj(self):
@@ -80,35 +92,36 @@ class trajSender:
 
 
     def send_traj(self):
+        try:
+            self.wait_for_config()
+            #Start sending the trajectory.
+            rospy.loginfo("Uploading Trajectory")
+            self.send_command("echo",True)
+            
+            self.send_command("trajconfig" , [0,len(self.traj),self.wrap])
 
-        #wait for the controller to be configured
-        r=rospy.Rate(30)
-        while not self.config_done:
-            r.sleep()
+            # Send the whole trajectory
+            start_time = time.time()
+            len_traj = len(self.traj)
+            for idx, entry in enumerate(self.traj):
+                # Send each line to the action server and wait until response
+                self.send_command('trajset',entry)
+                if not idx%5:
+                    print('\r'+"UPLOAD TRAJ: Uploading Trajectory, %0.1f"%((idx+1)/float(len_traj)*100) +'%' +" complete", end='')
+                    sys.stdout.flush()
 
-        #Start sending the trajectory.
-        self.send_command("echo",True)
-        
-        self.send_command("trajconfig" , [0,len(self.traj),self.wrap])
+            end_time = time.time()
 
-        # Send the whole trajectory
-        start_time = time.time()
-        len_traj = len(self.traj)
-        for idx, entry in enumerate(self.traj):
-            # Send each line to the action server and wait until response
-            self.send_command('trajset',entry)
-            if not idx%5:
-                print('\r'+"TRAJECTORY FOLLOWER: Uploading Trajectory, %0.1f"%((idx+1)/float(len_traj)*100) +'%' +" complete", end='')
-                sys.stdout.flush()
-
-        end_time = time.time()
-
-        print('\r',end='')
-        sys.stdout.write("\033[K") #clear line
-        print("TRAJECTORY FOLLOWER: Uploading Trajectory, Done in %0.2f sec"%(end_time - start_time))
+            print('\r',end='')
+            sys.stdout.write("\033[K") #clear line
+            print("UPLOAD TRAJ: Uploading Trajectory, Done in %0.2f sec"%(end_time - start_time))
 
 
-        self.send_command("set",[0.5]+self.traj[0][2:])
+            self.send_command("set",[0.5]+self.traj[0][2:])
+
+        except KeyboardInterrupt:
+            self.shutdown()
+
 
             
 
@@ -135,13 +148,17 @@ class trajSender:
 
 if __name__ == '__main__':
     try:
-        rospy.init_node('send_traj_node')
+        rospy.init_node('send_traj_node', disable_signals=True)
         profile = rospy.get_param(rospy.get_name()+'/traj_profile')
-        print("TRAJECTORY FOLLOWER: Uploading Trajectory '%s'"%(profile))  
+        print("UPLOAD TRAJ: Uploading Trajectory '%s'"%(profile))  
         node = trajSender(profile)
         node.send_traj()
         node.shutdown()
 
+    except KeyboardInterrupt:
+        node.shutdown()
 
-    except rospy.ROSInterruptException:
+
+
+    except rospy.ROSInterruptException or rospy.ROSException:
         print("program interrupted before completion", file=sys.stderr)
