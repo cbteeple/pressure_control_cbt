@@ -141,15 +141,12 @@ class SerialReadThreaded:
 	
 
 	def thread_reading(self):
-		try:
-			print(self.read_now)
-			while self.read_now.is_set() and not rospy.is_shutdown():
-				while self.s.in_waiting and not rospy.is_shutdown():
-					raw_reading = self.readStuff()
-					self.reading_cb(raw_reading);
-				self.r.sleep()
-		except:
-			self.shutdown()
+		print(self.read_now)
+		while self.read_now.is_set() and not rospy.is_shutdown():
+			while self.s.in_waiting and not rospy.is_shutdown():
+				raw_reading = self.readStuff()
+				self.reading_cb(raw_reading);
+			self.r.sleep()
 
 
 	def readStuff(self):

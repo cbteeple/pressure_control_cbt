@@ -67,7 +67,7 @@ class PressureSender:
         #later: get this automatically from listening for messages in the echo topic
 
     def ack_waiter(self,data):
-        if data.command == "set"
+        if data.command == "set":
             self.num_channels = len(data.args)
             self.curr_pressures = data.args
 

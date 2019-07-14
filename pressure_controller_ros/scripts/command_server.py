@@ -84,7 +84,7 @@ class CommandAction(object):
                     #Spin and wait for an acknowledgment from the controller
                     ack_curr = ""
                     cmd = str(goal.command).lower()
-                    while ack_curr != cmd :
+                    while ack_curr != cmd and not rospy.is_shutdown():
                         if len(self.ack_buffer)>0:
                             ack_curr = self.ack_buffer.pop().command
                         r.sleep()

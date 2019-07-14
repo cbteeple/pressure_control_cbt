@@ -13,7 +13,7 @@
   <group>
 
     <!-- Load the config node and settings -->
-    <node name="setpoint_node" pkg="pressure_controller_ros" type="set_pressure.py" respawn="false"
+    <node name="setpoint_node" pkg="pressure_controller_ros" type="set_pressure_manual.py" respawn="false"
     	output="screen">
       	<rosparam param="setpoints" subst_value="True">$(arg setpoint)</rosparam>
       	<param name="transition_time" type="double" value="$(arg transition_time)" />

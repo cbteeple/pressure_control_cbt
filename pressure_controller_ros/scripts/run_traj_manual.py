@@ -24,20 +24,29 @@ from pynput.keyboard import Key, Listener
 
 class trajSender:
     def __init__(self):
+        self.r = rospy.Rate(100)
+
+        rospy.Subscriber('pressure_control/echo', pressure_controller_ros.msg.Echo, self.ack_waiter)
+
+
         self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
         self._client.wait_for_server()
         self._running = False
+        self._reset = False
+        self._paused=False
 
-        
         # Get trajectory from the parameter server
         all_settings = rospy.get_param(rospy.get_name())
         self.data_back = all_settings.get("data_back")
 
+        self.send_command("echo",True)
         self.send_command("_flush",[])
         self.send_command("off",[],wait_for_ack=False)
         self.send_command("_flush",[])
         self.send_command("mode",2,wait_for_ack=False)
-        self.r = rospy.Rate(100)
+
+        if self. data_back:
+            self.send_command("on",[],wait_for_ack=False)
 
 
         listener = Listener(
@@ -47,25 +56,32 @@ class trajSender:
 
 
 
-    def restart_traj(self):
-        self.send_command("trajstart",[],wait_for_ack=False)
-        self._running = True
-
-
     def start_traj(self):
         self.send_command("trajstart",[],wait_for_ack=False)
-        if self.data_back:
-            self.send_command("on",[],wait_for_ack=False)
-        self._running = True
+        #self._running = True
+        self._reset = False
 
 
     def stop_traj(self):
         self.send_command("trajstop",[],wait_for_ack=False)
-        self.send_command("off",[],wait_for_ack=False)
-        self._running = False
+        #self._running = False
+        self._reset = True
+
+
+    def pause_traj(self):
+        self.send_command("trajpause",[],wait_for_ack=False)
+        self._paused = True
+        #self._running = False
+
+
+    def resume_traj(self):
+        self.send_command("trajresume",[],wait_for_ack=False)
+        self._paused = False
+        #self._running = True
 
     
     def spin(self):
+        print("Spinning")
         while not rospy.is_shutdown():
             self.r.sleep()
 
@@ -96,6 +112,19 @@ class trajSender:
         self._client.cancel_all_goals()
 
 
+    def ack_waiter(self,data):
+        if data.command == "traj":
+            if data.args[0] == "Start":
+                self._running=True
+                print('Started....')
+            else:
+                self._running=False
+                print('Stopped....')
+
+
+
+
+
 
     def on_press(self,key):
         pass
@@ -103,15 +132,21 @@ class trajSender:
 
     def on_release(self,key):
         if key == Key.space:
-            print('_START')
-            if self._running:
-                self.restart_traj()
-            else:
+            if self._reset or not self._running:
+                print('_START')
                 self.start_traj()
+
+            else:
+                if self._paused:
+                    print('_RESUME')
+                    self.resume_traj()
+                else:
+                    print('_PAUSE')
+                    self.pause_traj()
                 
 
         elif key == Key.alt:
-            print('_STOP')
+            print('_RESET')
             self.stop_traj()
 
 

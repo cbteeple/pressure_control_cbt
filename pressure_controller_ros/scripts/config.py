@@ -44,6 +44,7 @@ class configSender:
 
         if self.config:
 
+            self.send_command("_flush",[])
             self.send_command("echo",True)
             self.send_command("load",[])  
             self.send_command("off",[])
