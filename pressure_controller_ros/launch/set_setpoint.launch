@@ -7,6 +7,8 @@
 <!-- get the arguments from  -->
 <arg name="setpoint" default="[0]" doc="pressure setting" />
 <arg name="transition_time" default="0.0" doc="number of seconds to transition" />
+<arg name="data_back" default="1" doc="the speed to run the trajectory at" />
+
 
 
 <!-- Load controller settings -->

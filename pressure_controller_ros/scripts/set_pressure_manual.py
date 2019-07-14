@@ -20,8 +20,9 @@ import numpy as np
 import serial_coms
 from pynput.keyboard import Key, Listener
 
-import colorama.init 
-import termcolor.colored as cterm
+from colorama import init as cinit
+from termcolor import colored as cterm
+import re
 
 
 
@@ -29,11 +30,13 @@ class PressureSender:
     def __init__(self):
         self.transition_time=0.5
         self.curr_ind=0
+        self.curr_ind_tmp = 0;
         self.curr_pressures = []
         self.num_channels=0
+        self._outputs = False
 
 
-        self._client = actionlib.SimpleActionClient('set_setpoints', pressure_controller_ros.msg.SetpointAction)
+        self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
         self._client.wait_for_server()
 
         rospy.Subscriber('pressure_control/echo', pressure_controller_ros.msg.Echo, self.ack_waiter)
@@ -57,10 +60,12 @@ class PressureSender:
         self.r = rospy.Rate(100)
 
 
-        listener = Listener(
+        self._listener = Listener(
             on_press=self.on_press,
             on_release=self.on_release)
-        listener.start()
+        self._listener.start()
+
+        self.redraw()
 
 
 
@@ -68,8 +73,9 @@ class PressureSender:
 
     def ack_waiter(self,data):
         if data.command == "set":
-            self.num_channels = len(data.args)
-            self.curr_pressures = data.args
+            self.num_channels = len(data.args)-1
+            self.curr_pressures = [float(x) for x in data.args[1:]]
+            print(self.curr_pressures)
 
 
 
@@ -78,54 +84,94 @@ class PressureSender:
         if self.curr_ind ==-1:
             self.send_command("set",[self.transition_time,pressure])
         else:
-            new_pressure = curr_pressures[:]
+            new_pressure = self.curr_pressures[:]
             new_pressure[self.curr_ind] = pressure
-            self.send_command("set",[self.transition_time].extend(new_pressure))
+            new_pressure.insert(0,self.transition_time)
+
+            self.send_command("set",new_pressure)
 
 
 
     def all_zero(self):
         self.send_command("set",[self.transition_time,0])
 
+    def data_stream(self):
+        self._outputs = not self._outputs
+        if self._outputs:
+            self.send_command("on",[])
+        else:
+            self.send_command("off",[])
+
 
     def ind_plus(self):
         self.curr_ind=int(np.clip(self.curr_ind+1,-1,self.num_channels-1))
+        self.curr_ind_tmp = self.curr_ind
 
 
     def ind_minus(self):
         self.curr_ind=int(np.clip(self.curr_ind-1,-1,self.num_channels-1))
+        self.curr_ind_tmp = self.curr_ind
+
+    def ind_all(self):
+        self.curr_ind=-1
+
+    def ind_res(self):
+        if self.curr_ind_tmp is not None:
+            self.curr_ind = self.curr_ind_tmp
+
+
 
     
     def spin(self):
         while not rospy.is_shutdown():
             try:
-                inp = raw_input("New Pressure: ")
+                self.r.sleep()
+                inp = str(raw_input())
 
-                if len(inp)==1:
-                    set_press(self, inp)
+                inp = re.sub('[^0-9 .-]','', inp)
 
-                if len(inp)==self.num_channels and self.curr_ind ==-1:
-                    set_press(self, inp)
+                if inp is not None:
+                    self.set_press(float(inp))
+                
+                self.redraw(True)
 
             except:
-                pass
+                raise
 
 
-    def redraw(self):
+    def redraw(self,extra=False):
         print('\r',end='')
+
+        if extra:
+            sys.stdout.write("\033[K") #clear line
+            sys.stdout.write("\033[A") #Up one
+            sys.stdout.write("\033[K") #clear line
+            sys.stdout.write("\033[A") #Up one
+
+        sys.stdout.write("\033[K") #clear line
+        sys.stdout.write("\033[A") #Up one
+        sys.stdout.write("\033[K") #clear line
+        sys.stdout.write("\033[A") #Up one
         sys.stdout.write("\033[K") #clear line
 
         out_str = ""
+        if self._outputs:
+            out_str+=cterm("Data ON!", 'blue',attrs=['bold'])
+        else:
+            out_str+=cterm("Data OFF", 'blue')
 
         for idx, pres in enumerate(self.curr_pressures):
                 if self.curr_ind == idx or self.curr_ind == -1:
-                    out_str+= colored("\t%0.3f"%(pres), 'black','on_green')
+                    out_str+= cterm("\t%0.3f"%(pres), 'green', attrs=['bold', 'underline'])
                 else:
-                    out_str+= colored("\t%0.3f"%(pres), 'green')
+                    out_str+= cterm("\t%0.3f"%(pres), 'green')
 
-        print(our_str+'\t')
+        print(out_str+'\t')
+        print("New Pressure: ")
 
-                    
+
+
+                   
 
     def send_command(self, command, args, wait_for_ack = True):
         command, args = validate_commands.go(command, args)
@@ -142,11 +188,12 @@ class PressureSender:
 
       
     def shutdown(self):
-        print("_Stopping trajectory follower")
+        print("_Stopping setpoint follower")
         self.send_command("off",[],wait_for_ack=False)
         self.send_command("set",[0,0])
         self.send_command("echo",False)
         self._client.cancel_all_goals()
+        self._listener.stop()
 
 
 
@@ -154,10 +201,10 @@ class PressureSender:
         pass
 
 
-    def on_release(self,key):       
+    def on_release(self,key):
         if key == Key.esc:
             self.all_zero()
-            self.redraw()
+            #self.redraw()
 
         elif key == Key.left:
             self.ind_minus()
@@ -167,26 +214,29 @@ class PressureSender:
             self.ind_plus()
             self.redraw()
 
+        elif key == Key.up:
+            self.ind_all()
+            self.redraw()
+
+        elif key == Key.down:
+            self.ind_res()
+            self.redraw()
+
+        elif key == Key.shift:
+            self.data_stream()
+            self.redraw()
+
 
 
 
 if __name__ == '__main__':
     try:
-        colorama.init() 
+        cinit() 
 
         rospy.init_node('run_traj_node', disable_signals=True)
         
 
         node = PressureSender()
-
-
-        print("TRAJECTORY FOLLOWER")  
-
-        print("\nControls:")
-        print("\tSPACE  - Restart trajectory")
-        print("\tALT    - Stop trajectory")
-        print("\tCTRL-C - Stop running")
-        print('')
 
         node.spin()
 
