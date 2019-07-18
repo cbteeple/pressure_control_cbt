@@ -22,7 +22,7 @@ import numpy as np
 
 class trajSender:
     def __init__(self, filename):
-        self._client = actionlib.SimpleActionClient('pressure_control', msg.CommandAction)
+        self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
         self._client.wait_for_server()
 
         self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor')
@@ -40,7 +40,7 @@ class trajSender:
         self.fix_traj()
 
         #IN LINUX: Fastest rate for individual data is ~100Hz. With ROS implementation, 30 HZ is stable
-        self.send_rate =  30
+        self.send_rate =  50
 
         self.r = rospy.Rate(self.send_rate)
 
@@ -89,6 +89,7 @@ class trajSender:
         len_traj = len(self.traj)
         for idx, entry in enumerate(self.traj):
             # Send each line to the action server and DONT WAIT
+            #self.send_command('set',[0]+entry[2:], wait_for_ack = False)
             self.send_command('set',[1./self.send_rate]+entry[2:], wait_for_ack = False)
             #if not idx%5:
             #    print('\r'+"LIVE TRAJECTORY FOLLOWER: Uploading Trajectory, %0.1f"%((idx+1)/float(len_traj)*100) +'%' +" complete", end='')
@@ -110,12 +111,12 @@ class trajSender:
     def send_command(self, command, args, wait_for_ack=True):
         command, args = validate_commands.go(command, args)
         # Send commands to the commader node and wait for things to be taken care of
-        goal = msg.CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
+        goal = pressure_controller_ros.msg.CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
         self._client.send_goal(goal)
         self._client.wait_for_result()
 
         if not self._client.get_result():
-            raise serial_coms.SerialIssue('Something went wrong and a setting was not validated')
+            raise serial_coms.Issue('Something went wrong and a setting was not validated')
         else:
             pass
 

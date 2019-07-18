@@ -12,7 +12,7 @@ class Error(Exception):
    """Base class for other exceptions"""
    pass
 
-class SerialIssue(Error):
+class Issue(Error):
    """Raised when there's an issue"""
    pass
 

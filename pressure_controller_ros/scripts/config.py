@@ -83,7 +83,7 @@ class configSender:
         self._client.wait_for_result()
 
         if not self._client.get_result():
-            raise serial_coms.SerialIssue('Something went wrong and a setting was not validated')
+            raise serial_coms.Issue('Something went wrong and a setting was not validated')
         else:
             pass
 
