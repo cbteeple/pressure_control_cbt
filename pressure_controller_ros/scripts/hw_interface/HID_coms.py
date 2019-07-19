@@ -39,7 +39,7 @@ class HIDComs:
 			# enable non-blocking mode
 			self.h.set_nonblocking(1)
 
-			self.DEBUG = True
+			self.DEBUG = False
 
 
 			
@@ -88,15 +88,16 @@ class HIDComs:
 		return command_toSend
 
 
+
 	def start_read_thread(self, reading_cb=None, poll_rate=None):
 		if not reading_cb and not poll_rate:
-			self.reader = HIDReadThreaded(self.h)
+			self.reader = HIDReadWriteThreaded(self.h)
 		elif reading_cb and not poll_rate:
-			self.reader = HIDReadThreaded(self.h, reading_cb=reading_cb)
+			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb)
 		elif not reading_cb and poll_rate:
-			self.reader = HIDReadThreaded(self.h, poll_rate=poll_rate)
+			self.reader = HIDReadWriteThreaded(self.h, poll_rate=poll_rate)
 		else:
-			self.reader = HIDReadThreaded(self.h, reading_cb=reading_cb, poll_rate=poll_rate)
+			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb, poll_rate=poll_rate)
 
 		self.reader.DEBUG= self.DEBUG
 
@@ -114,7 +115,9 @@ class HIDComs:
 
 
 
-class HIDReadThreaded:
+
+
+class HIDReadWriteThreaded:
 	def __init__(self, hid_in, reading_cb = None, poll_rate = 2000):
 		self.h = hid_in
 		self.r = rospy.Rate(poll_rate)
@@ -141,17 +144,19 @@ class HIDReadThreaded:
 		self.new_command = threading.Event()
 		self.new_command.clear()
 
-		reading_thread = threading.Thread(target=self.thread_reading)
+		reading_thread = threading.Thread(target=self.thread_run)
 		reading_thread.start()
+		print('Communication thread started')
+
 	
 
-	def thread_reading(self):
+	def thread_run(self):
 		while self.read_now.is_set() and not rospy.is_shutdown():
 			if self.new_command.is_set():
 				
 				if self.DEBUG:
 					self.curr_send_time = rospy.get_rostime().to_nsec()
-					print("SEND: %0.4f"%((self.curr_send_time-self.last_send_time)/1000000.0))
+					print("SEND: %0.4f ms"%((self.curr_send_time-self.last_send_time)/1000000.0))
 					self.last_send_time = self.curr_send_time
 				
 				self.h.write( [ ord(char) for char in list(self.command_toSend)] + [0] * (64-len(self.command_toSend)))
@@ -161,7 +166,7 @@ class HIDReadThreaded:
 			if raw_reading is not None:
 				if self.DEBUG:
 					self.curr_read_time = rospy.get_rostime().to_nsec()
-					print("READ: %0.4f"%((self.curr_read_time-self.last_read_time)/1000000.0))
+					print("READ: %0.4f ms"%((self.curr_read_time-self.last_read_time)/1000000.0))
 					self.last_read_time = self.curr_read_time
 
 				self.reading_cb(raw_reading);
@@ -192,3 +197,53 @@ class HIDReadThreaded:
 		self.h.close()
 
 
+
+
+
+
+class TrajThread:
+	def __init__(self, comm_obj, reading_cb = None, traj_rate = 2000):
+		self.comm_obj = comm_obj
+		self.r = rospy.Rate(traj_rate)
+		self.command_toSend = None
+		
+
+		if not reading_cb:
+			reading_cb = self.do_nothing
+
+		self.start_thread(reading_cb)
+
+
+	def do_nothing(self,line):
+		print(line)
+
+
+	def start_thread(self, reading_cb):
+		self.reading_cb = reading_cb
+		self.running_now = threading.Event()
+		self.running_now.set()
+		self.new_command = self.comm_obj.new_command
+
+		traj_thread = threading.Thread(target=self.thread_run)
+		traj_thread.start()
+		print('Communication thread started')
+
+	
+
+	def thread_run(self):
+		while self.running_now.is_set() and not rospy.is_shutdown():
+
+
+			# Interpolate to get the next setpoint:
+
+
+			# Actually send the setpoint if there's nothing stacked up:
+			if not self.reader.new_command.is_set():
+				self.reader.command_toSend = command_toSend
+				self.new_command.set()			
+			self.r.sleep()
+
+
+	def shutdown(self):
+		print("HID READER: Shutting Down")
+		self.running_now.clear()

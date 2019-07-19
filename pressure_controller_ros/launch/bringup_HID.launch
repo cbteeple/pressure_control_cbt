@@ -20,7 +20,7 @@
 <!-- Load controller settings -->
   <group>
   	<!-- Start the main serial sender -->
-  	<node name="pressure_control_server_node" pkg="pressure_controller_ros" type="command_server.py" respawn="false"
+  	<node name="pressure_control_server_node" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
     	output="screen">
       <rosparam file="$(find pressure_controller_ros)/config/comms/hid_config.yaml" command="load"/>
       <param name="DEBUG" type="bool" value="$(arg debug)"/>

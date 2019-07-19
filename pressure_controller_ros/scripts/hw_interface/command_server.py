@@ -18,39 +18,18 @@ class CommandAction(object):
     _feedback = msg.CommandFeedback()
     _result = msg.CommandResult()
 
-    def __init__(self, name):
+    def __init__(self, name, comms_obj):
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
         self._action_name = name
         self.ack_buffer = []
 
-        # Begin serial communication
-        devname = rospy.get_param(rospy.get_name()+'/devname',None)
-        baud = rospy.get_param(rospy.get_name()+'/baudrate',None)
-
-        vendor_id = rospy.get_param(rospy.get_name()+'/vendor_id',None)
-        product_id = rospy.get_param(rospy.get_name()+'/product_id',None)
-
-        if devname is not None:
-            self.comms = serial_coms.SerialComs(devname, baud)
-        elif vendor_id is not None:
-            self.comms = HID_coms.HIDComs(vendor_id, product_id)
-        else:
-            print("NO COMUNICATION INTERFACES PRESENT")
-
-        if not self.comms.connected:
-            raise Exception("Serial port was not connected")
-
+        self.comms=comms_obj
 
         # Start some message publishers and subscribers
-        self.data_pub = rospy.Publisher('pressure_control/pressure_data', msg.DataIn, queue_size=10)
-        self.echo_pub = rospy.Publisher('pressure_control/echo', msg.Echo, queue_size=10)
         rospy.Subscriber('pressure_control/echo', msg.Echo, self.ack_waiter)
 
-        # Start a serial reader in a second thread.
-        # The polling rate only affects how often data gets read. It can be read in large blocks and doesn't take much time at all
-        self.comms.start_read_thread(poll_rate=5000, reading_cb=self.process_serial_in)
 
         # Start an actionlib server
         self._as = actionlib.SimpleActionServer('pressure_control', msg.CommandAction, execute_cb=self.execute_cb, auto_start = False)
@@ -113,47 +92,6 @@ class CommandAction(object):
             #rospy.loginfo('%s: Succeeded' % self._action_name)
             self._as.set_succeeded(self._result)
             #rospy.loginfo("End: %s"%(goal.command))
-
-
-    def process_serial_in(self, line_in):
-        if not line_in:
-            return
-
-        if line_in.startswith('_'):
-            #Look for an underscore - This is an echo response
-            line_in=line_in.replace("_NEW ",'')
-            line_in=line_in.strip('_')
-            line_split = line_in.split(": ")
-
-            cmd = line_split[0].strip(' ')
-
-            if len(line_split) <= 1:
-                args = ""
-            else:
-                args = line_split[1].split('\t')
-
-            echo_in = msg.Echo()
-            echo_in.command = str(cmd).lower() 
-            echo_in.args = args
-
-            if self.DEBUG:
-                rospy.loginfo(echo_in)
-
-            self.echo_pub.publish(echo_in)
-
-        else:
-            #All other incomming lines are tab-separated data
-            line_split = line_in.split('\t')
-
-            data_in = msg.DataIn();
-            data_in.time = long(line_split[0])
-            data_in.setpoints = [float(i) for i in line_split[1::2]] 
-            data_in.measured  = [float(i) for i in line_split[2::2]]
-
-            if self.DEBUG:
-                rospy.loginfo(data_in)
-
-            self.data_pub.publish(data_in)
 
 
 

@@ -17,7 +17,6 @@ import time
 import sys
 import os
 import numbers
-import serial_coms
 
 from bondpy import bondpy
 
@@ -83,7 +82,7 @@ class configSender:
         self._client.wait_for_result()
 
         if not self._client.get_result():
-            raise serial_coms.Issue('Something went wrong and a setting was not validated')
+            raise ('Something went wrong and a setting was not validated')
         else:
             pass
 

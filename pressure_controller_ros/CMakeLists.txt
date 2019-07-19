@@ -52,6 +52,8 @@ add_message_files(
   FILES
     Echo.msg
     DataIn.msg
+    PressureTrajectory.msg
+    PressureTrajectoryPoint.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -68,6 +70,7 @@ add_action_files(
     Command.action
     Setpoint.action
     Run.action
+    PressureTrajectory.action
 )
 
 ## Generate added messages and services with any dependencies listed here

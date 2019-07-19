@@ -10,7 +10,6 @@ import actionlib
 import pressure_controller_ros.msg as msg
 
 #Import custom serial coms commands
-import serial_coms
 import validate_commands
 
 
@@ -66,7 +65,7 @@ class SetpointAction(object):
         self._client.wait_for_result()
 
         if not self._client.get_result():
-            raise serial_coms.Issue('Something went wrong and a setting was not validated')
+            raise ('Something went wrong and a setting was not validated')
             pass
         else:
             pass
