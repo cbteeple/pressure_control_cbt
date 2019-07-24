@@ -92,6 +92,8 @@ class configSender:
     def handle_pid(self):
         pid = self.config.get("PID")
 
+        self.send_command("intstart", pid.get("integrator_start") )
+
         all_equal = pid.get("all_equal")
         if all_equal:
             values = []
@@ -104,6 +106,8 @@ class configSender:
         for idx in range(self.num_channels):
             vals = [idx]+values[idx]
             self.send_command("pid",vals)
+
+        self.send_command("pid",[],wait_for_ack=False)
 
 
 

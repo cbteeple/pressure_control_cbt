@@ -15,6 +15,7 @@ data_loop_time: 1 #[ms]
 #   If "all-equal" is False, then settings for all channels must be specified as a list of lists
 PID:
     all_equal: True
+    integrator_start: 5.0
     values: [0.1000, 0.0010, 0.0010]
 
 # Set the max and min pressures in software [psi]

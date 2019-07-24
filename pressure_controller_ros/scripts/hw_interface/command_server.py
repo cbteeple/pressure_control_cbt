@@ -4,12 +4,10 @@ import rospy
 import actionlib
 
 
-#Import the specific messages that we created in our tutorials folder.
+#Import the specific messages that we created.
 import pressure_controller_ros.msg as msg
 
-#Import custom serial coms, threading, and queueing
-import serial_coms
-import HID_coms
+
 
 
 

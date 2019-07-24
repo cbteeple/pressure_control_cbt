@@ -8,9 +8,6 @@ from scipy.interpolate import interp1d
 #Import the specific messages that we created in our tutorials folder.
 import pressure_controller_ros.msg as msg
 
-#Import custom serial coms, threading, and queueing
-import serial_coms
-import HID_coms
 
 
 

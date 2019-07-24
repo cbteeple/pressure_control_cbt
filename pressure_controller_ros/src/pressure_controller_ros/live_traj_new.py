@@ -16,37 +16,66 @@ import sys
 import os
 import numbers
 import numpy as np
+import copy
+import yaml
+import threading
+
+filepath_default = os.path.join('..','trajectories')
 
 
 
 class trajSender:
-    def __init__(self, filename):
+    def __init__(self, speed_factor = 1.0):
+        self.filepath_default = filepath_default
+
+
         self.command_client = actionlib.SimpleActionClient('pressure_control', CommandAction)
         self.traj_client = actionlib.SimpleActionClient('hand/pressure_trajectory', PressureTrajectoryAction)
         self.command_client.wait_for_server()
         self.traj_client.wait_for_server()
 
-        self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor')
+        self.speed_multiplier = 1./speed_factor
+        self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
         self.num_channels = rospy.get_param('/config_node/channels/num_channels')
 
         
-        # Get trajectory from the parameter server
-        all_settings = rospy.get_param(rospy.get_name())
-        self.DEBUG = all_settings.get("DEBUG",False)
-        self.traj = all_settings.get("setpoints")
-        self.wrap = all_settings.get("wrap")  
-
-        
-        self.fix_traj()
 
 
-    def fix_traj(self):
-        num_pad = self.num_channels - (len(self.traj[0])-1)
-        traj_arr = np.asarray(self.traj)
+    def load_trajectory(self, filename, filepath=None):
+
+        if filename is None:
+            # Get trajectory from the parameter server
+            all_settings = rospy.get_param(rospy.get_name())
+            
+        else:
+            # Load the trajectory from a file
+            if filepath is None:
+                # Use the default file path if we don't give it one explicitly
+                filepath = self.filepath_default
+
+            inFile=os.path.join(filepath,'hand',filename+".yaml")
+            with open(inFile,'r') as f:
+                # use safe_load instead of load
+                all_settings = yaml.safe_load(f)
+                f.close()
+
+        # Extract settings
+        traj = all_settings.get("setpoints",None)
+
+        # Fix errors in the trajectory before building it
+        traj_fixed = self.fix_traj(traj)
+
+        return self.build_traj(traj_fixed)
+
+
+
+    def fix_traj(self, traj):
+        num_pad = self.num_channels - (len(traj[0])-1)
+        traj_arr = np.asarray(traj)
         # If the trajectory is too small, pad with zeros
         if num_pad>0:
-            pad = np.zeros(len(self.traj),num_pad)
+            pad = np.zeros(len(traj),num_pad)
             traj_arr = np.concatenate(traj_arr, pad, axis=1)
 
             rospy.loginfo('%s: Padding trajectory with %d columns of zeros.' % (rospy.get_name(), num_pad))
@@ -63,23 +92,24 @@ class trajSender:
 
 
         # Update the speed multiplier and add indices to the front
-        traj_arr[:,0] = self.speed_factor*traj_arr[:,0]
+        traj_arr[:,0] = self.speed_multiplier*traj_arr[:,0]
 
-
-        self.traj = traj_arr.tolist()
+        return traj_arr.tolist()
 
 
     # build the whole trajectory
-    def build_traj(self):
-        self.traj_goal = PressureTrajectoryGoal()
-        self.traj_goal.trajectory = PressureTrajectory()
+    def build_traj(self, traj):
+        traj_goal = PressureTrajectoryGoal()
+        traj_goal.trajectory = PressureTrajectory()
 
-        for entry in self.traj:
-            self.traj_goal.trajectory.points.append(PressureTrajectoryPoint(pressures=entry[1:], time_from_start=rospy.Duration(entry[0])))
+        for entry in traj:
+            traj_goal.trajectory.points.append(PressureTrajectoryPoint(pressures=entry[1:], time_from_start=rospy.Duration(entry[0])))
+
+        return traj_goal
 
 
 
-    def start_point(self):
+    def go_to_start(self, traj_goal, reset_time):
         self.send_command("_flush",[])
         self.send_command("echo",False,wait_for_ack = False)
         self.send_command("on",[],wait_for_ack = False)
@@ -92,21 +122,28 @@ class trajSender:
         goal_tmp.trajectory = PressureTrajectory()
 
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=current_states.measured, time_from_start=rospy.Duration(0.0)))
-        goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=self.traj[0][1:], time_from_start=rospy.Duration(2.0)))
+
+        first_pt = copy.deepcopy(traj_goal.trajectory.points[0])
+        first_pt.time_from_start = rospy.Duration(reset_time)
+
+        goal_tmp.trajectory.points.append(first_pt)
+
+        self.execute_traj(goal_tmp)
 
 
 
-        self.traj_client.send_goal(goal_tmp)
-        self.traj_client.wait_for_result()
 
+    def execute_traj(self, traj_goal):
+        try:
+            self.traj_client.send_goal(traj_goal)
+            self.traj_client.wait_for_result()
 
-
-
-    def send_traj(self):
-
-        self.traj_client.send_goal(self.traj_goal)
-        self.traj_client.wait_for_result()
-
+        except KeyboardInterrupt:
+            self.traj_client.cancel_goal()
+            self.safe_stop()
+            raise
+        except:
+            raise
 
 
             
@@ -151,12 +188,12 @@ if __name__ == '__main__':
         rospy.init_node('send_traj_node')
         profile = rospy.get_param(rospy.get_name()+'/traj_profile')
         print("LIVE TRAJECTORY FOLLOWER: Uploading Trajectory '%s'"%(profile))  
-        node = trajSender(profile)
-        node.build_traj()
+        node = trajSender()
+        traj_built = node.load_trajectory(profile)
         inp=raw_input("Go to starting point?")
-        node.start_point()
+        node.go_to_start(traj_built)
         inp=raw_input("Continue?")
-        node.send_traj()
+        node.execute_traj(traj_built)
         node.shutdown()
 
 

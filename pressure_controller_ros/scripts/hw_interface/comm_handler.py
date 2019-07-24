@@ -8,8 +8,9 @@ import threading
 import pressure_controller_ros.msg as msg
 
 #Import custom serial coms, threading, etc
-import serial_coms
-import HID_coms
+import pressure_controller_ros.hardware_interface.serial_coms as serial_coms
+import pressure_controller_ros.hardware_interface.HID_coms as HID_coms
+
 import command_server
 import traj_server
 
@@ -82,8 +83,8 @@ class CommHandler(object):
 
             data_in = msg.DataIn();
             data_in.time = long(line_split[0])
-            data_in.setpoints = [float(i) for i in line_split[2::2]] 
-            data_in.measured  = [float(i) for i in line_split[3::2]]
+            data_in.setpoints = [float(i) for i in line_split[1::2]] 
+            data_in.measured  = [float(i) for i in line_split[2::2]]
 
             if self.DEBUG:
                 rospy.loginfo(data_in)
