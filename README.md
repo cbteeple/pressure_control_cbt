@@ -27,6 +27,11 @@ This driver is split into two ROS packages:
 - **pressure_trajectory_ros** is where trajectories are set up, built, and stored for execution
 - **pressure_control_ros** is the main driver that actually interfaces with the pressure control hardware
 
+### Manual pressure control
+`roslaunch pressure_controller_ros set_setpoint.launch`
+
+
+
 ### Build Trajectories
 To build a pressure trajectory, you can either discretize a periodic waveform, or use a set of waypoints.
 
