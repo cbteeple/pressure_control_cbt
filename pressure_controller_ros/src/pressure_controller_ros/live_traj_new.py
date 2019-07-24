@@ -109,7 +109,7 @@ class trajSender:
 
 
 
-    def go_to_start(self, traj_goal, reset_time):
+    def go_to_start(self, traj_goal, reset_time, blocking=True):
         self.send_command("_flush",[])
         self.send_command("echo",False,wait_for_ack = False)
         self.send_command("on",[],wait_for_ack = False)
@@ -128,15 +128,20 @@ class trajSender:
 
         goal_tmp.trajectory.points.append(first_pt)
 
-        self.execute_traj(goal_tmp)
+        self.execute_traj(goal_tmp, blocking)
 
 
 
 
-    def execute_traj(self, traj_goal):
+
+    def execute_traj(self, traj_goal, blocking=True):
         try:
             self.traj_client.send_goal(traj_goal)
-            self.traj_client.wait_for_result()
+
+            if blocking:
+                self.traj_client.wait_for_result()
+            else:
+                return self.traj_client
 
         except KeyboardInterrupt:
             self.traj_client.cancel_goal()
