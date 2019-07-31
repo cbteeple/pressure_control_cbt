@@ -66,7 +66,7 @@ class trajSender:
         # Fix errors in the trajectory before building it
         traj_fixed = self.fix_traj(traj)
 
-        return self.build_traj(traj_fixed)
+        return traj_fixed
 
 
 
@@ -122,11 +122,7 @@ class trajSender:
         goal_tmp.trajectory = PressureTrajectory()
 
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=current_states.measured, time_from_start=rospy.Duration(0.0)))
-
-        first_pt = copy.deepcopy(traj_goal.trajectory.points[0])
-        first_pt.time_from_start = rospy.Duration(reset_time)
-
-        goal_tmp.trajectory.points.append(first_pt)
+        goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=traj_goal[0][1:], time_from_start=rospy.Duration(traj_goal[0][0])))
 
         self.execute_traj(goal_tmp, blocking)
 
