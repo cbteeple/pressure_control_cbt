@@ -9,6 +9,7 @@ A module to do pressure control in ROS.
 ### Software:
 - [ROS Melodic](http://wiki.ros.org/melodic/Installation)
 - The [rqt_multiplot](http://wiki.ros.org/rqt_multiplot) package for nice plot layouts and custom axes
+- [Cython HID Library](https://github.com/trezor/cython-hidapi) from Trezor
 - Various python libraries:
 	- [scipy](https://www.scipy.org/) (`pip install scipy`)
 	- [numpy](https://www.numpy.org/) (`pip install numpy`)
@@ -16,6 +17,8 @@ A module to do pressure control in ROS.
 	- [matplotlib](https://matplotlib.org/) (`pip install matplotlib`)
 	- [pynput](https://pypi.org/project/pynput/) (`pip install pynput`)
 	- [yaml](https://pyyaml.org/wiki/PyYAMLDocumentation) (`pip install pyyaml`)
+	- [colorama](https://pypi.org/project/colorama) (`pip install colorama`)
+	- [termcolor](https://pypi.org/project/termcolor) (`pip install termcolor`)
 
 ## How To Use
 This driver is split into two ROS packages:
