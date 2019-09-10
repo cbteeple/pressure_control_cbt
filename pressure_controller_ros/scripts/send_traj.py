@@ -104,6 +104,8 @@ class trajSender:
             start_time = time.time()
             len_traj = len(self.traj)
             for idx, entry in enumerate(self.traj):
+                if self.DEBUG:
+                    print(entry)
                 # Send each line to the action server and wait until response
                 self.send_command('trajset',entry)
                 if not idx%5:
@@ -127,6 +129,11 @@ class trajSender:
 
     def send_command(self, command, args):
         command, args = validate_commands.go(command, args)
+
+        if self.DEBUG:
+            print(command)
+            print(args)
+
         # Send commands to the commader node and wait for things to be taken care of
         goal = pressure_controller_ros.msg.CommandGoal(command=command, args=args, wait_for_ack = True)
         self._client.send_goal(goal)

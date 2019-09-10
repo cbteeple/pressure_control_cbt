@@ -80,6 +80,7 @@ class HIDComs:
 		else:
 			raise ValueError('sendCommand expects either a list or a number')
 
+
 		#Share the value with the main looping thread
 		if not self.reader.new_command.is_set():
 			self.reader.command_toSend = command_toSend
