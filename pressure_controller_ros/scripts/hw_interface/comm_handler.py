@@ -136,7 +136,7 @@ class CommHandler(object):
     '''
 
     def start_traj_server_thread(self):
-        self.traj_server_rate = rospy.get_param(rospy.get_name()+'/traj_server_rate',1000)
+        self.traj_server_rate = rospy.get_param(rospy.get_name()+'/traj_server_rate',500)
         thread = threading.Thread(target=self.traj_server_thread)
         thread.start()
 
