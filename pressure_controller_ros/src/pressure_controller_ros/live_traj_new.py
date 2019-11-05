@@ -167,7 +167,8 @@ class trajSender:
         self.command_client.wait_for_result()
 
         if not self.command_client.get_result():
-            raise serial_coms.Issue('Something went wrong and a setting was not validated')
+            print('Something went wrong and a setting was not validated')
+            raise
         else:
             pass
 

@@ -55,52 +55,57 @@ class CommHandler(object):
         if not line_in:
             return
 
-        if line_in.startswith('_'):
-            #Look for an underscore - This is an echo response
-            line_in=line_in.replace("_NEW ",'')
-            line_in=line_in.strip('_')
-            line_split = line_in.split(": ")
+        try:
+            if line_in.startswith('_'):
+                #Look for an underscore - This is an echo response
+                line_in=line_in.replace("_NEW ",'')
+                line_in=line_in.strip('_')
+                line_split = line_in.split(": ")
 
-            cmd = line_split[0].strip(' ')
+                cmd = line_split[0].strip(' ')
 
-            if len(line_split) <= 1:
-                args = ""
-            else:
-                args = line_split[1].split('\t')
-
-            echo_in = msg.Echo()
-            echo_in.command = str(cmd).lower() 
-            echo_in.args = args
-
-            if self.DEBUG:
-                rospy.loginfo(echo_in)
-
-            self.echo_pub.publish(echo_in)
-
-        else:
-            #All other incomming lines are tab-separated data, where the 
-            line_split = line_in.split('\t')
-
-            data_type  = int(line_split[1])
-
-            if data_type == 0:
-                self.data_in = msg.DataIn();
-                self.data_in.time = long(line_split[0])
-                self.data_in.setpoints = [float(i) for i in line_split[2:]]
-
-            elif data_type == 1:
-
-                if self.data_in.time == long(line_split[0]):
-
-                    self.data_in.measured  = [float(i) for i in line_split[2:]]
-
-                    if self.DEBUG:
-                        rospy.loginfo(self.data_in)
-
-                    self.data_pub.publish(self.data_in)
+                if len(line_split) <= 1:
+                    args = ""
                 else:
-                    if self.DEBUG:
-                        print("COMM_HANDER: The second half of the message was not recieved")
+                    args = line_split[1].split('\t')
+
+                echo_in = msg.Echo()
+                echo_in.command = str(cmd).lower() 
+                echo_in.args = args
+
+                if self.DEBUG:
+                    rospy.loginfo(echo_in)
+
+                self.echo_pub.publish(echo_in)
+
+            else:
+                #All other incomming lines are tab-separated data, where the 
+                line_split = line_in.split('\t')
+
+                data_type  = int(line_split[1])
+
+                if data_type == 0:
+                    self.data_in = msg.DataIn();
+                    self.data_in.time = long(line_split[0])
+                    self.data_in.setpoints = [float(i) for i in line_split[2:]]
+
+                elif data_type == 1:
+                    if not hasattr(self , 'data_in'):
+                        return
+
+                    if self.data_in.time == long(line_split[0]):
+
+                        self.data_in.measured  = [float(i) for i in line_split[2:]]
+
+                        if self.DEBUG:
+                            rospy.loginfo(self.data_in)
+
+                        self.data_pub.publish(self.data_in)
+                    else:
+                        if self.DEBUG:
+                            print("COMM_HANDER: The second half of the message was not recieved")
+        except rospy.ROSException:
+            return
 
 
 

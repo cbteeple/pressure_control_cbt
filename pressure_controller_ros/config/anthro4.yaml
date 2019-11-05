@@ -1,13 +1,13 @@
 # Channels - turn them on or off
 channels:
-    num_channels: 4
-    states: [1, 1, 1, 1]
+    num_channels: 7
+    states: [1, 1, 0,0,0,0,0]
 
 
 # Loop time for outputting data.
 #   This is not strictly enforced, but will always be within 10 ms.
 #   If set to 0ms, the loop wil run as fast as the control loop.
-data_loop_time: 1 #[ms]
+data_loop_time: 2 #[ms]
 
 
 #Set the PID Values.
@@ -21,8 +21,8 @@ PID:
 # Set the max and min pressures in software [psi]
 #   If single value, then it will be set for all channels
 #   If a vector of length NUM_CHANNELS, then each channel is set independently
-max_pressure: [22, 22, 22,22]
-min_pressure: -30
+max_pressure: [22, 22, 22,22,20,20,20]
+min_pressure: -5
 
 transitions: 1.0
 #For debugging purposes

@@ -101,6 +101,7 @@ class HIDComs:
 			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb, poll_rate=poll_rate)
 
 		self.reader.DEBUG= self.DEBUG
+		self.reader.start_threaded()
 
 
 
@@ -122,24 +123,22 @@ class HIDReadWriteThreaded:
 	def __init__(self, hid_in, reading_cb = None, poll_rate = 2000):
 		self.h = hid_in
 		self.r = rospy.Rate(poll_rate)
+		self.reading_cb = reading_cb
+
 		self.command_toSend = None
 		self.curr_send_time = rospy.get_rostime().to_nsec()
 		self.last_send_time = self.curr_send_time
 		self.last_read_time = self.curr_send_time
-
-
-		if not reading_cb:
-			reading_cb = self.do_nothing
-
-		self.start_threaded(reading_cb)
+		
+		if not self.reading_cb:
+			self.reading_cb = self.do_nothing
 
 
 	def do_nothing(self,line):
 		print(line)
 
 
-	def start_threaded(self, reading_cb):
-		self.reading_cb = reading_cb
+	def start_threaded(self):
 		self.read_now = threading.Event()
 		self.read_now.set()
 		self.new_command = threading.Event()
