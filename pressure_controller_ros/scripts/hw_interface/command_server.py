@@ -4,12 +4,11 @@ import rospy
 import actionlib
 
 
-#Import the specific messages that we created in our tutorials folder.
+#Import the specific messages that we created.
 import pressure_controller_ros.msg as msg
 
-#Import custom serial coms, threading, and queueing
-import serial_coms
-import threading
+
+
 
 
 class CommandAction(object):
@@ -17,31 +16,18 @@ class CommandAction(object):
     _feedback = msg.CommandFeedback()
     _result = msg.CommandResult()
 
-    def __init__(self, name):
+    def __init__(self, name, comms_obj):
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
         self._action_name = name
         self.ack_buffer = []
 
-        # Begin serial communication
-        self.devname = rospy.get_param(rospy.get_name()+'/devname')
-        self.baud = rospy.get_param(rospy.get_name()+'/baudrate')
-
-        self.ser = serial_coms.SerialComs(self.devname,self.baud)
-
-        if not self.ser.connected:
-            raise Exception("Serial port was not connected")
-
+        self.comms=comms_obj
 
         # Start some message publishers and subscribers
-        self.data_pub = rospy.Publisher('pressure_control/pressure_data', msg.DataIn, queue_size=10)
-        self.echo_pub = rospy.Publisher('pressure_control/echo', msg.Echo, queue_size=10)
         rospy.Subscriber('pressure_control/echo', msg.Echo, self.ack_waiter)
 
-        # Start a serial reader in a second thread.
-        # The polling rate only affects how often data gets read. It can be read in large blocks and doesn't take much time at all
-        self.ser.start_read_thread(poll_rate=500, reading_cb=self.process_serial_in)
 
         # Start an actionlib server
         self._as = actionlib.SimpleActionServer('pressure_control', msg.CommandAction, execute_cb=self.execute_cb, auto_start = False)
@@ -49,6 +35,8 @@ class CommandAction(object):
 
 
     def execute_cb(self, goal):
+
+        #rospy.loginfo("Start: %s"%(goal.command))
 
         # helper variables
         r = rospy.Rate(3000)
@@ -64,7 +52,7 @@ class CommandAction(object):
 
             if "flush"  in goal.command:
                 rospy.loginfo('%s: Flushing serial coms' % (self._action_name))
-                self.ser.flushAll()
+                self.comms.flushAll()
 
             self._feedback.success = True
             self._as.publish_feedback(self._feedback)
@@ -77,14 +65,14 @@ class CommandAction(object):
                 self._as.set_preempted()
             else:
 
-                self._feedback.out_string = self.ser.sendCommand(goal.command, goal.args)
+                self._feedback.out_string = self.comms.sendCommand(goal.command, goal.args)
                 self._feedback.sent = True
 
                 if goal.wait_for_ack:
                     #Spin and wait for an acknowledgment from the controller
                     ack_curr = ""
                     cmd = str(goal.command).lower()
-                    while ack_curr != cmd and not rospy.is_shutdown():
+                    while ack_curr != cmd and not rospy.is_shutdown() and not self._as.is_preempt_requested():
                         if len(self.ack_buffer)>0:
                             ack_curr = self.ack_buffer.pop().command
                         r.sleep()
@@ -101,47 +89,7 @@ class CommandAction(object):
             self._result.success = self._feedback.success
             #rospy.loginfo('%s: Succeeded' % self._action_name)
             self._as.set_succeeded(self._result)
-
-
-    def process_serial_in(self, line_in):
-        if not line_in:
-            return
-
-        if line_in.startswith('_'):
-            #Look for an underscore - This is an echo response
-            line_in=line_in.replace("_NEW ",'')
-            line_in=line_in.strip('_')
-            line_split = line_in.split(": ")
-
-            cmd = line_split[0].strip(' ')
-
-            if len(line_split) <= 1:
-                args = ""
-            else:
-                args = line_split[1].split('\t')
-
-            echo_in = msg.Echo()
-            echo_in.command = str(cmd).lower() 
-            echo_in.args = args
-
-            if self.DEBUG:
-                rospy.loginfo(echo_in)
-
-            self.echo_pub.publish(echo_in)
-
-        else:
-            #All other incomming lines are tab-separated data
-            line_split = line_in.split('\t')
-
-            data_in = msg.DataIn();
-            data_in.time = long(line_split[0])
-            data_in.setpoints = [float(i) for i in line_split[2::2]] 
-            data_in.measured  = [float(i) for i in line_split[3::2]]
-
-            if self.DEBUG:
-                rospy.loginfo(data_in)
-
-            self.data_pub.publish(data_in)
+            #rospy.loginfo("End: %s"%(goal.command))
 
 
 
@@ -153,7 +101,7 @@ class CommandAction(object):
 
 
     def shutdown(self):
-        self.ser.shutdown()
+        self.comms.shutdown()
 
 
         

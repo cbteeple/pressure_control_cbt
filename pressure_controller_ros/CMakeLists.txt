@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS actionlib_msgs std_msgs)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -52,6 +52,8 @@ add_message_files(
   FILES
     Echo.msg
     DataIn.msg
+    PressureTrajectory.msg
+    PressureTrajectoryPoint.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -68,6 +70,7 @@ add_action_files(
     Command.action
     Setpoint.action
     Run.action
+    PressureTrajectory.action
 )
 
 ## Generate added messages and services with any dependencies listed here

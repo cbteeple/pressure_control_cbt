@@ -1,0 +1,13 @@
+#goal definition
+pressure_controller_ros/PressureTrajectory trajectory
+
+---
+
+#result definition
+bool success
+
+---
+
+#feedback
+duration current_time
+bool success

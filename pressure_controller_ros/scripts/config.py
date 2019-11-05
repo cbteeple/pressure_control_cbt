@@ -17,7 +17,6 @@ import time
 import sys
 import os
 import numbers
-import serial_coms
 
 from bondpy import bondpy
 
@@ -83,7 +82,7 @@ class configSender:
         self._client.wait_for_result()
 
         if not self._client.get_result():
-            raise serial_coms.SerialIssue('Something went wrong and a setting was not validated')
+            raise ('Something went wrong and a setting was not validated')
         else:
             pass
 
@@ -92,6 +91,8 @@ class configSender:
 
     def handle_pid(self):
         pid = self.config.get("PID")
+
+        self.send_command("intstart", pid.get("integrator_start") )
 
         all_equal = pid.get("all_equal")
         if all_equal:
@@ -105,6 +106,8 @@ class configSender:
         for idx in range(self.num_channels):
             vals = [idx]+values[idx]
             self.send_command("pid",vals)
+
+        self.send_command("pid",[],wait_for_ack=False)
 
 
 

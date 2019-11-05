@@ -8,8 +8,7 @@ import actionlib
 
 # Brings in the messages used by the fibonacci action, including the
 # goal message and the result message.
-import pressure_controller_ros.msg
-import validate_commands
+from pressure_controller_ros.msg import *
 
 
 import time
@@ -22,8 +21,10 @@ import numpy as np
 
 class trajSender:
     def __init__(self, filename):
-        self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction)
-        self._client.wait_for_server()
+        self.command_client = actionlib.SimpleActionClient('pressure_control', CommandAction)
+        self.traj_client = actionlib.SimpleActionClient('hand/pressure_trajectory', PressureTrajectoryAction)
+        self.command_client.wait_for_server()
+        self.traj_client.wait_for_server()
 
         self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor')
 
@@ -38,12 +39,6 @@ class trajSender:
 
         
         self.fix_traj()
-
-        #IN LINUX: Fastest rate for individual data is ~100Hz. With ROS implementation, 30 HZ is stable
-        self.send_rate =  50
-
-        self.r = rospy.Rate(self.send_rate)
-
 
 
     def fix_traj(self):
@@ -69,53 +64,71 @@ class trajSender:
 
         # Update the speed multiplier and add indices to the front
         traj_arr[:,0] = self.speed_factor*traj_arr[:,0]
-        inds = np.vstack(np.arange(0,len(self.traj)))
-        traj_arr = np.concatenate((inds, traj_arr), axis=1)
 
 
         self.traj = traj_arr.tolist()
 
 
+    # build the whole trajectory
+    def build_traj(self):
+        self.traj_goal = PressureTrajectoryGoal()
+        self.traj_goal.trajectory = PressureTrajectory()
 
-    def send_traj(self):
+        for entry in self.traj:
+            self.traj_goal.trajectory.points.append(PressureTrajectoryPoint(pressures=entry[1:], time_from_start=rospy.Duration(entry[0])))
+
+
+
+    def start_point(self):
         self.send_command("_flush",[])
         self.send_command("echo",False,wait_for_ack = False)
         self.send_command("on",[],wait_for_ack = False)
         
         self.send_command("mode" ,3,wait_for_ack = False)
 
-        # Send the whole trajectory
-        start_time = time.time()
-        len_traj = len(self.traj)
-        for idx, entry in enumerate(self.traj):
-            # Send each line to the action server and DONT WAIT
-            #self.send_command('set',[0]+entry[2:], wait_for_ack = False)
-            self.send_command('set',[1./self.send_rate]+entry[2:], wait_for_ack = False)
-            #if not idx%5:
-            #    print('\r'+"LIVE TRAJECTORY FOLLOWER: Uploading Trajectory, %0.1f"%((idx+1)/float(len_traj)*100) +'%' +" complete", end='')
-            #    sys.stdout.flush()
+        current_states = rospy.wait_for_message("/pressure_control/pressure_data", DataIn)
 
-            self.r.sleep()
+        goal_tmp = PressureTrajectoryGoal()
+        goal_tmp.trajectory = PressureTrajectory()
 
-        end_time = time.time()
-
-        print('\r',end='')
-        sys.stdout.write("\033[K") #clear line
-        print("LIVE TRAJECTORY FOLLOWER: Uploading Trajectory, %d points, Done in %0.2f sec"%(len_traj,end_time - start_time))
+        goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=current_states.measured, time_from_start=rospy.Duration(0.0)))
+        goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=self.traj[0][1:], time_from_start=rospy.Duration(2.0)))
 
 
-        self.send_command("echo",False)
+
+        self.traj_client.send_goal(goal_tmp)
+        self.traj_client.wait_for_result()
+
+
+
+
+    def send_traj(self):
+
+        self.traj_client.send_goal(self.traj_goal)
+        self.traj_client.wait_for_result()
+
+
 
             
 
     def send_command(self, command, args, wait_for_ack=True):
-        command, args = validate_commands.go(command, args)
-        # Send commands to the commader node and wait for things to be taken care of
-        goal = pressure_controller_ros.msg.CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
-        self._client.send_goal(goal)
-        self._client.wait_for_result()
+        # Validate inputs
+        if not isinstance(command, str):
+            raise ValueError('CONFIG: Command must be a string')
 
-        if not self._client.get_result():
+        if isinstance(args, list) or isinstance(args, tuple):
+            pass
+        elif isinstance(args, numbers.Number):
+            args=[args]
+        else:
+            raise ValueError('CONFIG: Args must be a list, tuple, or number')
+
+        # Send commands to the commader node and wait for things to be taken care of
+        goal = CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
+        self.command_client.send_goal(goal)
+        self.command_client.wait_for_result()
+
+        if not self.command_client.get_result():
             raise serial_coms.Issue('Something went wrong and a setting was not validated')
         else:
             pass
@@ -125,10 +138,9 @@ class trajSender:
     def shutdown(self):
         self.send_command("off",[],wait_for_ack=False)
         self.send_command("echo",True)
-        self.send_command("mode",1)
-        self.send_command("set",[0,0])
+        self.send_command("mode",3)
         self.send_command("echo",False)
-        self._client.cancel_all_goals()
+        self.command_client.cancel_all_goals()
         
 
 
@@ -140,6 +152,10 @@ if __name__ == '__main__':
         profile = rospy.get_param(rospy.get_name()+'/traj_profile')
         print("LIVE TRAJECTORY FOLLOWER: Uploading Trajectory '%s'"%(profile))  
         node = trajSender(profile)
+        node.build_traj()
+        inp=raw_input("Go to starting point?")
+        node.start_point()
+        inp=raw_input("Continue?")
         node.send_traj()
         node.shutdown()
 
