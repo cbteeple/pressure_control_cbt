@@ -54,6 +54,7 @@ add_message_files(
     DataIn.msg
     PressureTrajectory.msg
     PressureTrajectoryPoint.msg
+    TrialSuccess.msg
 )
 
 ## Generate services in the 'srv' folder
