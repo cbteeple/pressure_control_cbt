@@ -34,6 +34,9 @@ class trajSender:
         self.command_client.wait_for_server()
         self.traj_client.wait_for_server()
 
+        if speed_factor <=0.0:
+            speed_factor = 1.0
+
         self.speed_multiplier = 1./speed_factor
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
@@ -92,7 +95,7 @@ class trajSender:
 
 
         # Update the speed multiplier and add indices to the front
-        traj_arr[:,0] = self.speed_multiplier*traj_arr[:,0]
+        #traj_arr[:,0] = self.speed_multiplier*traj_arr[:,0]
 
         return traj_arr.tolist()
 
@@ -103,7 +106,9 @@ class trajSender:
         traj_goal.trajectory = PressureTrajectory()
 
         for entry in traj:
-            traj_goal.trajectory.points.append(PressureTrajectoryPoint(pressures=entry[1:], time_from_start=rospy.Duration(entry[0])))
+            traj_goal.trajectory.points.append(PressureTrajectoryPoint(
+                        pressures       = entry[1:],
+                        time_from_start = self.speed_multiplier*rospy.Duration(entry[0])))
 
         return traj_goal
 

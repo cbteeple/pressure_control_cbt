@@ -74,9 +74,9 @@ class HIDComs:
 		if isinstance(values, list) or isinstance(values, tuple):
 			if values:
 				for val in values:
-					command_toSend+= ";%0.3f"%(val)
+					command_toSend+= ";%0.2f"%(val)
 		elif isinstance(values, numbers.Number):
-			command_toSend+=";%0.3f"%(values)
+			command_toSend+=";%0.2f"%(values)
 		else:
 			raise ValueError('sendCommand expects either a list or a number')
 
