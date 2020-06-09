@@ -115,6 +115,8 @@ class trajSender:
 
 
     def go_to_start(self, traj_goal, reset_time, blocking=True):
+        self.start_pressures = traj_goal[0][1:]
+
         self.send_command("_flush",[])
         self.send_command("echo",False,wait_for_ack = False)
         self.send_command("on",[],wait_for_ack = False)
@@ -127,7 +129,7 @@ class trajSender:
         goal_tmp.trajectory = PressureTrajectory()
 
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=current_states.measured, time_from_start=rospy.Duration(0.0)))
-        goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=traj_goal[0][1:], time_from_start=rospy.Duration(traj_goal[0][0])))
+        goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=self.start_pressures, time_from_start=rospy.Duration(traj_goal[0][0])))
 
         self.execute_traj(goal_tmp, blocking)
 
@@ -136,20 +138,18 @@ class trajSender:
 
 
     def execute_traj(self, traj_goal, blocking=True):
-        try:
-            self.traj_client.send_goal(traj_goal)
+        #try:
+        self.traj_client.send_goal(traj_goal)
 
-            if blocking:
-                self.traj_client.wait_for_result()
-            else:
-                return self.traj_client
+        if blocking:
+            self.traj_client.wait_for_result()
+        else:
+            return self.traj_client
 
-        except KeyboardInterrupt:
-            self.traj_client.cancel_goal()
-            self.safe_stop()
-            raise
-        except:
-            raise
+        #except KeyboardInterrupt:
+        #    self.traj_client.cancel_goal()
+        #except:
+        #    raise
 
 
             
@@ -179,11 +179,28 @@ class trajSender:
 
 
 
-    def shutdown(self):
-        self.send_command("off",[],wait_for_ack=False)
+    def shutdown(self, reset_pressures=None):
+        print('HAND CONTROLLER: Cancel current goals')
+        self.traj_client.cancel_all_goals()
+
         self.send_command("echo",True)
+        self.send_command("off",[],wait_for_ack=True)
+
+        print('HAND CONTROLLER: Switching to direct pressure control mode')
         self.send_command("mode",3)
-        self.send_command("echo",False)
+            
+        if reset_pressures is not None:
+            print('HAND CONTROLLER: Setting resting pressures')
+
+            if reset_pressures == 'resting':
+                out_press= copy.deepcopy(self.start_pressures)
+                out_press.insert(0, 2)
+                print(out_press)
+                self.send_command("set",out_press)
+            else:
+                self.send_command("set",reset_pressures)
+
+        self.send_command("echo",False, wait_for_ack=False)
         self.command_client.cancel_all_goals()
         
 
