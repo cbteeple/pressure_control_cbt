@@ -30,7 +30,7 @@ This driver is split into two ROS packages:
 - **pressure_trajectory_ros** is where trajectories are set up, built, and stored for execution
 - **pressure_control_ros** is the main driver that actually interfaces with the pressure control hardware
 
-[See the Documentation](https://cbteeple.github.io/pressure_controller_docs/ros-driver)
+[See the Documentation](https://ctrl-p.cbteeple.com/ros-driver)
 
 ## About Ctrl-P
 The Ctrl-P project is a full-stack pneumatic control system featuring smooth control of pressure at a high bandwidth.
