@@ -23,6 +23,7 @@ class CommHandler(object):
 
         self._action_name = name
         self.ack_buffer = []
+        self.data_in = None
 
         # Begin communication with the pressure controller
         devname = rospy.get_param(rospy.get_name()+'/devname',None)
@@ -84,26 +85,38 @@ class CommHandler(object):
 
                 data_type  = int(line_split[1])
 
-                if data_type == 0:
-                    self.data_in = msg.DataIn();
-                    self.data_in.time = long(line_split[0])
-                    self.data_in.setpoints = [float(i) for i in line_split[2:]]
-
-                elif data_type == 1:
-                    if not hasattr(self , 'data_in'):
-                        return
-
-                    if self.data_in.time == long(line_split[0]):
-
-                        self.data_in.measured  = [float(i) for i in line_split[2:]]
-
+                if data_type == 0: # Handle incomming setpoint data
+                    # Here marks a new data point. Send the previous one.
+                    if self.data_in is not None:
                         if self.DEBUG:
                             rospy.loginfo(self.data_in)
 
                         self.data_pub.publish(self.data_in)
+
+                    # Now begin the next one
+                    self.data_in = msg.DataIn();
+                    self.data_in.time = long(line_split[0])
+                    self.data_in.setpoints = [float(i) for i in line_split[2:]]
+
+                elif data_type == 1: # Handle incomming measured data
+                    if self.data_in is None:
+                        return
+
+                    if self.data_in.time == long(line_split[0]):
+                        self.data_in.measured  = [float(i) for i in line_split[2:]]
+
                     else:
                         if self.DEBUG:
-                            print("COMM_HANDER: The second half of the message was not recieved")
+                            print("COMM_HANDLER: Measured data message not recieved")
+
+                elif data_type == 2: # Handle incomming master pressure data
+                    if self.data_in is None:
+                        return
+
+                    if self.data_in.time == long(line_split[0]):
+                        self.data_in.input_pressure  = [float(i) for i in line_split[2:]]
+
+
         except rospy.ROSException:
             return
 
