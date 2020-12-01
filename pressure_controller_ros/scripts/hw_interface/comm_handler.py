@@ -20,6 +20,7 @@ class CommHandler(object):
     def __init__(self, name):
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
+        self.data_channel = rospy.get_param(rospy.get_name()+"/data_channel","pressure_control")
 
         self._action_name = name
         self.ack_buffer = []
@@ -34,8 +35,10 @@ class CommHandler(object):
 
         if devname is not None:
             self.comms = serial_coms.SerialComs(devname, baud)
+            self.comms.DEBUG = self.DEBUG
         elif vendor_id is not None:
             self.comms = HID_coms.HIDComs(vendor_id, product_id)
+            self.comms.DEBUG = self.DEBUG
         else:
             print("NO COMUNICATION INTERFACES PRESENT")
 
@@ -44,8 +47,8 @@ class CommHandler(object):
 
 
         # Start some message publishers and subscribers
-        self.data_pub = rospy.Publisher('pressure_control/pressure_data', msg.DataIn, queue_size=10)
-        self.echo_pub = rospy.Publisher('pressure_control/echo', msg.Echo, queue_size=10)
+        self.data_pub = rospy.Publisher(self.data_channel+'/pressure_data', msg.DataIn, queue_size=10)
+        self.echo_pub = rospy.Publisher(self.data_channel+'/echo', msg.Echo, queue_size=10)
 
 
         self.comms.start_read_thread(poll_rate=5000, reading_cb=self.process_serial_in)
@@ -135,7 +138,7 @@ class CommHandler(object):
     '''
     def cmd_server_thread(self):
         try:
-            server = command_server.CommandAction('command_server', self.comms)
+            server = command_server.CommandAction(self.data_channel, self.comms)
             print("COMMAND SERVER: Ready!")
             rospy.spin()
 
@@ -163,7 +166,7 @@ class CommHandler(object):
     '''
     def traj_server_thread(self):
         try:
-            server = traj_server.TrajAction('command_server', self.comms, self.traj_server_rate)
+            server = traj_server.TrajAction(self.data_channel, self.comms, self.traj_server_rate)
             print("TRAJECTORY SERVER: Ready!")
             rospy.spin()
 
@@ -189,10 +192,18 @@ class CommHandler(object):
 if __name__ == '__main__':
     try:
         rospy.init_node('pressure_control', disable_signals=True)
-        print("HW INTERFACE: Node Initiatilized (%s)"%(rospy.get_name()))
+        name = rospy.get_param(rospy.get_name()+"/data_channel","pressure_control")
+        use_traj_server = rospy.get_param(rospy.get_name()+"/use_traj_server",True)
+        
+        print("HW INTERFACE: Node Initiatilized (%s)"%(rospy.get_name()+'/'+name))
         server = CommHandler(rospy.get_name())
         server.start_cmd_server_thread()
-        server.start_traj_server_thread()
+        if use_traj_server:
+            print("HW INTERFACE: Starting traj server...")
+            server.start_traj_server_thread()
+        else:
+            print("HW INTERFACE: Not using traj server.")
+
         print("HW INTERFACE: Ready!")
         rospy.spin()
 

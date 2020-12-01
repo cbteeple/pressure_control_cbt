@@ -25,12 +25,14 @@ filepath_default = os.path.join('..','trajectories')
 
 
 class trajSender:
-    def __init__(self, speed_factor = 1.0):
+    def __init__(self, speed_factor = 1.0, name = "pressure_control"):
         self.filepath_default = filepath_default
 
+        self._name = name
 
-        self.command_client = actionlib.SimpleActionClient('pressure_control', CommandAction)
-        self.traj_client = actionlib.SimpleActionClient('hand/pressure_trajectory', PressureTrajectoryAction)
+
+        self.command_client = actionlib.SimpleActionClient(self._name, CommandAction)
+        self.traj_client = actionlib.SimpleActionClient(self._name+'/pressure_trajectory', PressureTrajectoryAction)
         self.command_client.wait_for_server()
         self.traj_client.wait_for_server()
 
@@ -117,17 +119,20 @@ class trajSender:
     def go_to_start(self, traj_goal, reset_time, blocking=True):
         self.start_pressures = traj_goal[0][1:]
 
-        self.send_command("_flush",[])
-        self.send_command("echo",False,wait_for_ack = False)
+        if self._name !='servo':
+            self.send_command("_flush",[])
+            self.send_command("mode" ,3,wait_for_ack = False)
+            self.send_command("_flush",[])
+            
+        self.send_command("echo",False,wait_for_ack = False)      
         self.send_command("on",[],wait_for_ack = False)
-        
-        self.send_command("mode" ,3,wait_for_ack = False)
 
-        current_states = rospy.wait_for_message("/pressure_control/pressure_data", DataIn)
+        current_states = rospy.wait_for_message("/"+self._name+"/pressure_data", DataIn)
 
         goal_tmp = PressureTrajectoryGoal()
         goal_tmp.trajectory = PressureTrajectory()
 
+        print(current_states.measured)
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=current_states.measured, time_from_start=rospy.Duration(0.0)))
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=self.start_pressures, time_from_start=rospy.Duration(traj_goal[0][0])))
 
@@ -166,6 +171,9 @@ class trajSender:
         else:
             raise ValueError('CONFIG: Args must be a list, tuple, or number')
 
+        if self.DEBUG:
+            print(command, args)
+
         # Send commands to the commader node and wait for things to be taken care of
         goal = CommandGoal(command=command, args=args, wait_for_ack = wait_for_ack)
         self.command_client.send_goal(goal)
@@ -183,11 +191,13 @@ class trajSender:
         print('HAND CONTROLLER: Cancel current goals')
         self.traj_client.cancel_all_goals()
 
+        
         self.send_command("echo",True)
         self.send_command("off",[],wait_for_ack=True)
 
-        print('HAND CONTROLLER: Switching to direct pressure control mode')
-        self.send_command("mode",3)
+        if self._name !='servo':
+            print('HAND CONTROLLER: Switching to direct pressure control mode')
+            self.send_command("mode",3)
             
         if reset_pressures is not None:
             print('HAND CONTROLLER: Setting resting pressures')

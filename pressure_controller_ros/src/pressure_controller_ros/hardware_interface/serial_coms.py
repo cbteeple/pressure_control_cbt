@@ -72,6 +72,8 @@ class SerialComs:
 		OUTPUTS:
 			out_str - the output string sent
 		"""
+		if self.DEBUG:
+			print("SERIAL_COMS:",command,values)
 		command_toSend = command
 		if isinstance(values, list) or isinstance(values, tuple):
 			if values:

@@ -25,7 +25,7 @@ class TrajAction(object):
         self.controller_rate=controller_rate
 
         # Start an actionlib server
-        self._as = actionlib.SimpleActionServer('/hand/pressure_trajectory', msg.PressureTrajectoryAction, execute_cb=self.execute_cb, auto_start = False)
+        self._as = actionlib.SimpleActionServer('/'+self._action_name+'/pressure_trajectory', msg.PressureTrajectoryAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
 
 
@@ -38,6 +38,9 @@ class TrajAction(object):
         for point in traj:
             self.traj_points.append(point.pressures)
             self.traj_times.append(point.time_from_start.to_sec())
+
+        print(self.traj_points)
+        print(self.traj_times)
 
         traj_interp = interp1d(self.traj_times,self.traj_points, axis=0)
 

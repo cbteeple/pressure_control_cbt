@@ -26,11 +26,11 @@ class CommandAction(object):
         self.comms=comms_obj
 
         # Start some message publishers and subscribers
-        rospy.Subscriber('pressure_control/echo', msg.Echo, self.ack_waiter)
+        rospy.Subscriber(self._action_name+'/echo', msg.Echo, self.ack_waiter)
 
 
         # Start an actionlib server
-        self._as = actionlib.SimpleActionServer('pressure_control', msg.CommandAction, execute_cb=self.execute_cb, auto_start = False)
+        self._as = actionlib.SimpleActionServer(self._action_name, msg.CommandAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
 
 
