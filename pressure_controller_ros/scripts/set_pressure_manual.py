@@ -27,7 +27,7 @@ import re
 
 class PressureSender:
     def __init__(self):
-        self.transition_time=0.0
+        self.transition_time=0.5
         self.curr_ind=0
         self.curr_ind_tmp = 0;
         self.curr_pressures = []

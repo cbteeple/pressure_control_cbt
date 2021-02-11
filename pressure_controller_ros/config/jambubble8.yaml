@@ -1,7 +1,7 @@
 # Channels - turn them on or off
 channels:
-    num_channels: 9
-    states: [1,1,1,1, 1,1,1,1, 0]
+    num_channels: 8
+    states: [1,1,1,1, 1,1,1,1]
 
 
 # Loop time for outputting data.
@@ -14,15 +14,26 @@ data_loop_time: 5 #[ms]
 #   If "all_equal" is True, then only the values in "values" are used
 #   If "all-equal" is False, then settings for all channels must be specified as a list of lists
 PID:
-    all_equal: True
-    integrator_start: 5.0
-    values: [0.09, 1.5, 0] #[0.1000, 0.0010, 0.0010]
+    all_equal: False
+    integrator_start: 1.0
+    values: 
+      - [0.09, 1.5, 0] # Purple Fingers
+      - [0.09, 1.5, 0] # Purple Fingers
+      - [0.09, 1.5, 0] # Purple Fingers
+      - [0.09, 1.5, 0] # Purple Fingers
+      - [0.09, 1.5, 0] # Purple Fingers
+      - [0.09, 1.5, 0] # Purple Fingers
+      - [0.10, 4.0, 0]  # Soft Bubble
+      - [0.20, 4.0, 0]  # Jamming  Skin
+
 
 # Set the max and min pressures in software [psi]
 #   If single value, then it will be set for all channels
 #   If a vector of length NUM_CHANNELS, then each channel is set independently
-max_pressure: 40
+max_pressure: [40,40,40,40, 40,40,6, 3]
 min_pressure: -50
+
+master_max_pressure: 60
 
 transitions: 1.0
 #For debugging purposes
