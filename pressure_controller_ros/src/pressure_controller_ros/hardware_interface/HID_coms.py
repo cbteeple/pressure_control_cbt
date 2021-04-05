@@ -6,20 +6,7 @@ import rospy
 import time
 import hid
 
-#from pressure_controller_interface.utils import build_cmd_string
-
-def build_cmd_string(command, values=None, format="%0.3f"):
-    txt = command
-    if values is not None:
-        #print("%s \t %s"%(command, values))
-        if isinstance(values, list) or isinstance(values, tuple):
-            if values:
-                for val in values:
-                    txt+= ";"+format%(val)
-        else:
-            txt+=";"+format%(values)
-    cmd = txt+'\n'
-    return cmd
+from pressure_control_interface.utils.comm_handler import build_cmd_string
 
 
 class Error(Exception):
@@ -212,7 +199,7 @@ class HIDReadWriteThreaded:
 					print("READ: %0.4f ms"%((self.curr_read_time-self.last_read_time)/1000000.0))
 					self.last_read_time = self.curr_read_time
 
-				sendout = {'dev_num':self.devnum, 'data':raw_reading}
+				sendout = {'devnum':self.devnum, 'data':raw_reading}
 				self.reading_cb(sendout);
 			else:
 				self.r.sleep()

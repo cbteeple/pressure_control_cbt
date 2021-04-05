@@ -14,8 +14,9 @@ import pressure_controller_ros.hardware_interface.HID_coms as HID_coms
 import command_server
 import traj_server
 
-#from pressure_controller_interface import CommandHandler
-from pressure_controller_interface.utils import CommandHandler
+import pressure_control_interface
+import pressure_control_interface.utils
+from pressure_control_interface.utils.comm_handler import CommandHandler
 
 
 class CommHandler(object):
@@ -26,7 +27,6 @@ class CommHandler(object):
 
         self._action_name = name
         self.ack_buffer = []
-        self.data_in = None
 
         # Begin communication with the pressure controller
         devices = rospy.get_param(rospy.get_name()+'/devices',None)
@@ -71,41 +71,16 @@ class CommHandler(object):
             else:
                 raise Exception("Comms were not connected for device #%d in the list"%(idx))  
 
+        self.data_in = [msg.DataIn()]*len(self.comms)
 
         # Start some message publishers and subscribers
         self.data_pub = rospy.Publisher(self.data_channel+'/pressure_data', msg.DataIn, queue_size=10)
         self.echo_pub = rospy.Publisher(self.data_channel+'/echo', msg.Echo, queue_size=10)
 
-
         self.command_handler = CommandHandler(self.comms)
         for comm in self.comms:
             comm['interface'].start_read_thread(poll_rate=5000, reading_cb=self.process_serial_in)
 
-
-    def send_command(self, cmd, args):
-        """
-        Split up commands to various devices
-
-        Parameters
-        ----------
-		cmd : str
-            a command to use
-		args : list
-            arguments for the command
-
-		OUTPUTS:
-			out_str - the output string sent
-        """
-
-        # Split the command into two:
-        commands = self.command_handler.split_command(cmd, args)
-
-        if len(commands) != len(self.comms):
-            raise ValueError("COMM HANDLER: length of command list does not equal the number of devices")
-
-        for idx, command in enumerate(commands):
-            if command is not None:
-                self.comms[idx]['interface'].sendCommand(command['command'],command['values'], self.comms[idx]['cmd_format'])
 
 
 
@@ -113,9 +88,11 @@ class CommHandler(object):
         if not data_in:
             return
 
+        if data_in is None:
+            return
 
         devnum = data_in.get('devnum', None)
-        line_in = line_in.get('data', None)
+        line_in = data_in.get('data', None)
 
         try:
             if line_in.startswith('_'):
@@ -197,7 +174,7 @@ class CommHandler(object):
     '''
     def cmd_server_thread(self):
         try:
-            server = command_server.CommandAction(self.data_channel, self.comms)
+            server = command_server.CommandAction(self.data_channel, self.comms, self.command_handler)
             print("COMMAND SERVER: Ready!")
             rospy.spin()
 
@@ -225,7 +202,7 @@ class CommHandler(object):
     '''
     def traj_server_thread(self):
         try:
-            server = traj_server.TrajAction(self.data_channel, self.comms, self.traj_server_rate)
+            server = traj_server.TrajAction(self.data_channel, self.comms, self.command_handler, self.traj_server_rate)
             print("TRAJECTORY SERVER: Ready!")
             rospy.spin()
 
