@@ -84,7 +84,7 @@ class TrajAction(object):
                 cmd_goal.args=[1/self.controller_rate] + new_pressures
                 cmd_goal.wait_for_ack = False
                 self.command_client.send_goal(cmd_goal)
-                self.command_client.wait_for_result()
+                #self.command_client.wait_for_result()
 
 
                 # Update the server
@@ -100,7 +100,7 @@ class TrajAction(object):
         cmd_goal.wait_for_ack = False
 
         self.command_client.send_goal(cmd_goal)
-        self.command_client.wait_for_result()
+        #self.command_client.wait_for_result()
 
 
 
