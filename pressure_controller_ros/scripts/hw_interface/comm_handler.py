@@ -27,32 +27,47 @@ class CommHandler(object):
         self.data_in = None
 
         # Begin communication with the pressure controller
-        devname = rospy.get_param(rospy.get_name()+'/devname',None)
-        baud = rospy.get_param(rospy.get_name()+'/baudrate',None)
+        devices = rospy.get_param(rospy.get_name()+'/devices',None)
 
-        vendor_id = rospy.get_param(rospy.get_name()+'/vendor_id',None)
-        product_id = rospy.get_param(rospy.get_name()+'/product_id',None)
-        serial_number = rospy.get_param(rospy.get_name()+'/serial_number',None)
+        self.comm_devs = []
+        for idx, device in enumerate(devices):
+            # Try to get serial device information
+            devname = device.get('devname', None)
+            baud    = device.get('baudrate', None)
 
-        if devname is not None:
-            self.comms = serial_coms.SerialComs(devname, baud)
-            self.comms.DEBUG = self.DEBUG
-        elif vendor_id is not None:
-            self.comms = HID_coms.HIDComs(vendor_id, product_id, serial_number)
-            self.comms.DEBUG = self.DEBUG
-        else:
-            print("NO COMUNICATION INTERFACES PRESENT")
+            # Try to get hid device information
+            vendor_id     = device.get('vendor_id',None)
+            product_id    = device.get('product_id',None)
+            serial_number = device.get('serial_number',None)
 
-        if not self.comms.connected:
-            raise Exception("Comms were not connected")
+            if devname is not None:
+                curr_dev = serial_coms.SerialComs(devname, baud)
+                curr_dev.DEBUG = self.DEBUG
+                self.comm_devs.append(curr_dev)
+            elif vendor_id is not None:
+                curr_dev = HID_coms.HIDComs(vendor_id, product_id, serial_number)
+                curr_dev.DEBUG = self.DEBUG
+                self.comm_devs.append(curr_dev)
+            else:
+                curr_dev = None
+            
+            if curr_dev is not None:
+                if not curr_dev.connected:
+                    raise Exception("Comms were not connected for device #%d in the list"%(idx))
+            else:
+                raise Exception("Comms were not connected for device #%d in the list"%(idx))
+
+        self.comms = self.comm_devs
+
+        
 
 
         # Start some message publishers and subscribers
         self.data_pub = rospy.Publisher(self.data_channel+'/pressure_data', msg.DataIn, queue_size=10)
         self.echo_pub = rospy.Publisher(self.data_channel+'/echo', msg.Echo, queue_size=10)
 
-
-        self.comms.start_read_thread(poll_rate=5000, reading_cb=self.process_serial_in)
+        for comm in self.comms:
+            comm.start_read_thread(poll_rate=5000, reading_cb=self.process_serial_in)
 
 
 
