@@ -16,12 +16,11 @@ class TrajAction(object):
     _feedback = msg.PressureTrajectoryFeedback()
     _result = msg.PressureTrajectoryResult()
 
-    def __init__(self, name, comms_obj, controller_rate=500):
+    def __init__(self, name, controller_rate=500):
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
         self._action_name = name
-        self.comms=comms_obj
         self.controller_rate=controller_rate
 
         self.command_client = actionlib.SimpleActionClient(self._action_name, msg.CommandAction)
