@@ -167,7 +167,7 @@ class CommHandler(object):
     '''
     def traj_server_thread(self):
         try:
-            server = traj_server.TrajAction(self.data_channel, self.comms, self.traj_server_rate)
+            server = traj_server.TrajAction(self.data_channel, self.traj_server_rate)
             print("TRAJECTORY SERVER: Ready!")
             rospy.spin()
 

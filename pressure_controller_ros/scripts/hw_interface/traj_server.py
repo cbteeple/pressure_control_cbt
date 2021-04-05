@@ -16,13 +16,15 @@ class TrajAction(object):
     _feedback = msg.PressureTrajectoryFeedback()
     _result = msg.PressureTrajectoryResult()
 
-    def __init__(self, name, comms_obj, controller_rate=500):
+    def __init__(self, name, controller_rate=500):
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
         self._action_name = name
-        self.comms=comms_obj
         self.controller_rate=controller_rate
+
+        self.command_client = actionlib.SimpleActionClient(self._action_name, msg.CommandAction)
+        self.command_client.wait_for_server()
 
         # Start an actionlib server
         self._as = actionlib.SimpleActionServer('/'+self._action_name+'/pressure_trajectory', msg.PressureTrajectoryAction, execute_cb=self.execute_cb, auto_start = False)
@@ -77,7 +79,12 @@ class TrajAction(object):
                 new_pressures = traj_interp(curr_time.to_sec()).tolist()
 
                 # Send pressure setpoint to the controller
-                self.comms.sendCommand("set", [1/self.controller_rate] + new_pressures)
+                cmd_goal = msg.CommandGoal()
+                cmd_goal.command="set"
+                cmd_goal.args=[1/self.controller_rate] + new_pressures
+                cmd_goal.wait_for_ack = False
+                self.command_client.send_goal(cmd_goal)
+                self.command_client.wait_for_result()
 
 
                 # Update the server
@@ -87,7 +94,13 @@ class TrajAction(object):
                 r.sleep()
                 idx += 1
 
-        self.comms.sendCommand("set", [1/self.controller_rate] + list(self.traj_points[-1]))
+        cmd_goal = msg.CommandGoal()
+        cmd_goal.command="set"
+        cmd_goal.args=[1/self.controller_rate] + list(self.traj_points[-1])
+        cmd_goal.wait_for_ack = False
+
+        self.command_client.send_goal(cmd_goal)
+        self.command_client.wait_for_result()
 
 
 
@@ -101,7 +114,7 @@ class TrajAction(object):
 
 
     def shutdown(self):
-        self.comms.shutdown()
+        self.command_client.cancel_all_goals()
 
 
         
