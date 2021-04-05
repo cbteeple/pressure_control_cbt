@@ -30,10 +30,11 @@ OUTPUTS:
 	s - the serial object created
 """	
 class HIDComs:
-	def __init__(self, vendor_id, product_id, serial_number=None):
+	def __init__(self, vendor_id, product_id, serial_number=None, devnum=0):
 		self.connected = False
 		try:
 			self.h = self.get_device(vendor_id, product_id, serial_number)
+			self.devnum = devnum
 			
 			# enable non-blocking mode
 			self.h.set_nonblocking(1)
@@ -139,10 +140,11 @@ class HIDComs:
 
 
 class HIDReadWriteThreaded:
-	def __init__(self, hid_in, reading_cb = None, poll_rate = 2000):
+	def __init__(self, hid_in, reading_cb = None, poll_rate = 2000, devnum=0):
 		self.h = hid_in
 		self.r = rospy.Rate(poll_rate)
 		self.reading_cb = reading_cb
+		self.devnum = devnum
 
 		self.command_toSend = None
 		self.curr_send_time = rospy.get_rostime().to_nsec()
@@ -188,7 +190,8 @@ class HIDReadWriteThreaded:
 					print("READ: %0.4f ms"%((self.curr_read_time-self.last_read_time)/1000000.0))
 					self.last_read_time = self.curr_read_time
 
-				self.reading_cb(raw_reading);
+				sendout = {'dev_num':self.devnum, 'data':raw_reading}
+				self.reading_cb(sendout);
 			else:
 				self.r.sleep()
 

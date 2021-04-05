@@ -29,7 +29,7 @@ class CommHandler(object):
         # Begin communication with the pressure controller
         devices = rospy.get_param(rospy.get_name()+'/devices',None)
 
-        self.comm_devs = []
+        self.comms = []
         for idx, device in enumerate(devices):
             # Try to get serial device information
             devname = device.get('devname', None)
@@ -40,26 +40,31 @@ class CommHandler(object):
             product_id    = device.get('product_id',None)
             serial_number = device.get('serial_number',None)
 
+            # Get other information about the controller
+            num_channels = device.get('num_channels',None)
+            cmd_spec = device.get('cmd_spec',None)
+
             if devname is not None:
-                curr_dev = serial_coms.SerialComs(devname, baud)
+                curr_dev = serial_coms.SerialComs(devname, baud, devnum=idx)
                 curr_dev.DEBUG = self.DEBUG
-                self.comm_devs.append(curr_dev)
             elif vendor_id is not None:
-                curr_dev = HID_coms.HIDComs(vendor_id, product_id, serial_number)
+                curr_dev = HID_coms.HIDComs(vendor_id, product_id, serial_number, devnum=idx)
                 curr_dev.DEBUG = self.DEBUG
-                self.comm_devs.append(curr_dev)
             else:
                 curr_dev = None
             
             if curr_dev is not None:
+                dev_dict = {
+                    'interface':curr_dev,
+                    'num_channels':num_channels,
+                    'cmd_spec':cmd_spec
+                    }
+                self.comms.append(dev_dict)
+
                 if not curr_dev.connected:
                     raise Exception("Comms were not connected for device #%d in the list"%(idx))
             else:
-                raise Exception("Comms were not connected for device #%d in the list"%(idx))
-
-        self.comms = self.comm_devs
-
-        
+                raise Exception("Comms were not connected for device #%d in the list"%(idx))  
 
 
         # Start some message publishers and subscribers
@@ -67,13 +72,17 @@ class CommHandler(object):
         self.echo_pub = rospy.Publisher(self.data_channel+'/echo', msg.Echo, queue_size=10)
 
         for comm in self.comms:
-            comm.start_read_thread(poll_rate=5000, reading_cb=self.process_serial_in)
+            comm['interface'].start_read_thread(poll_rate=5000, reading_cb=self.process_serial_in)
 
 
 
-    def process_serial_in(self, line_in):
-        if not line_in:
+    def process_serial_in(self, data_in):
+        if not data_in:
             return
+
+
+        devnum = data_in.get('devnum', None)
+        line_in = line_in.get('data', None)
 
         try:
             if line_in.startswith('_'):
@@ -92,6 +101,7 @@ class CommHandler(object):
                 echo_in = msg.Echo()
                 echo_in.command = str(cmd).lower() 
                 echo_in.args = args
+                echo_in.devnum = devnum
 
                 if self.DEBUG:
                     rospy.loginfo(echo_in)
@@ -106,34 +116,34 @@ class CommHandler(object):
 
                 if data_type == 0: # Handle incomming setpoint data
                     # Here marks a new data point. Send the previous one.
-                    if self.data_in is not None:
+                    if self.data_in[devnum] is not None:
                         if self.DEBUG:
-                            rospy.loginfo(self.data_in)
+                            rospy.loginfo(self.data_in[devnum])
 
-                        self.data_pub.publish(self.data_in)
+                        self.data_pub.publish(self.data_in[devnum])
 
                     # Now begin the next one
-                    self.data_in = msg.DataIn();
-                    self.data_in.time = long(line_split[0])
-                    self.data_in.setpoints = [float(i) for i in line_split[2:]]
+                    self.data_in[devnum] = msg.DataIn();
+                    self.data_in[devnum].time = long(line_split[0])
+                    self.data_in[devnum].setpoints = [float(i) for i in line_split[2:]]
 
                 elif data_type == 1: # Handle incomming measured data
-                    if self.data_in is None:
+                    if self.data_in[devnum] is None:
                         return
 
-                    if self.data_in.time == long(line_split[0]):
-                        self.data_in.measured  = [float(i) for i in line_split[2:]]
+                    if self.data_in[devnum].time == long(line_split[0]):
+                        self.data_in[devnum].measured  = [float(i) for i in line_split[2:]]
 
                     else:
                         if self.DEBUG:
                             print("COMM_HANDLER: Measured data message not recieved")
 
                 elif data_type == 2: # Handle incomming master pressure data
-                    if self.data_in is None:
+                    if self.data_in[devnum] is None:
                         return
 
-                    if self.data_in.time == long(line_split[0]):
-                        self.data_in.input_pressure  = [float(i) for i in line_split[2:]]
+                    if self.data_in[devnum].time == long(line_split[0]):
+                        self.data_in[devnum].input_pressure  = [float(i) for i in line_split[2:]]
 
 
         except rospy.ROSException:
@@ -201,7 +211,8 @@ class CommHandler(object):
 
 
     def shutdown(self):
-        self.comms.shutdown()
+        for comm in self.comms:
+            comm['interface'].shutdown()
 
 
         
