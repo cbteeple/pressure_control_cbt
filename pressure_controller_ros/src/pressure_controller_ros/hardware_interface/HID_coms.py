@@ -1,12 +1,25 @@
 #!/usr/bin/env python
 
-import serial
 import numbers
 import threading
 import rospy
 import time
 import hid
 
+#from pressure_controller_interface.utils import build_cmd_string
+
+def build_cmd_string(command, values=None, format="%0.3f"):
+    txt = command
+    if values is not None:
+        #print("%s \t %s"%(command, values))
+        if isinstance(values, list) or isinstance(values, tuple):
+            if values:
+                for val in values:
+                    txt+= ";"+format%(val)
+        else:
+            txt+=";"+format%(values)
+    cmd = txt+'\n'
+    return cmd
 
 
 class Error(Exception):
@@ -81,22 +94,31 @@ class HIDComs:
 		#self.h.reset_output_buffer()
 
 
-	def sendCommand(self, command, values):
-		"""Send commands via serial
-		INPUTS:
-			command - a command to use
-			args    - arguments for the command
+	def sendCommand(self, command, values, format="%0.2f"):
+		"""
+		Send commands to the device
 
-		OUTPUTS:
+		Parameters
+		----------
+		command : string
+			a command to use
+		args : list, tuple, or number
+			arguments for the command
+		format : str
+			format string for arguments
+
+		Returns
+		-------
 			out_str - the output string sent
 		"""
-		command_toSend = command
-		if isinstance(values, list) or isinstance(values, tuple):
-			if values:
-				for val in values:
-					command_toSend+= ";%0.2f"%(val)
-		elif isinstance(values, numbers.Number):
-			command_toSend+=";%0.2f"%(values)
+
+		if self.DEBUG:
+			print("HID_COMMS:",command,values)
+
+		command_toSend = ""
+		if isinstance(values, list) or isinstance(values, tuple) or isinstance(values, numbers.Number):
+			command_toSend = build_cmd_string(command, values, format)
+
 		else:
 			raise ValueError('sendCommand expects either a list or a number')
 
