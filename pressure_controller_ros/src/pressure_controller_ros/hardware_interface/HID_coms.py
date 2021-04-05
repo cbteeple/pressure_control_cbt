@@ -30,11 +30,10 @@ OUTPUTS:
 	s - the serial object created
 """	
 class HIDComs:
-	def __init__(self, vendor_id, product_id):
+	def __init__(self, vendor_id, product_id, serial_number=None):
 		self.connected = False
 		try:
-			self.h = hid.device()
-			self.h.open(vendor_id, product_id) # TREZOR VendorID/ProductID
+			self.h = self.get_device(vendor_id, product_id, serial_number)
 			
 			# enable non-blocking mode
 			self.h.set_nonblocking(1)
@@ -50,6 +49,26 @@ class HIDComs:
 			pass
 
 
+	def get_device(self, vendor_id, product_id, serial_number=None):
+		h = hid.device()
+		if serial_number is None:
+			# If no serial number is geven, open the first device with the product and vendor info
+			h.open(vendor_id, product_id) # TREZOR VendorID/ProductID
+		else:
+			# If a serial number is geven, find that device
+			serial_number = str(serial_number)
+			path = None
+			for device_dict in hid.enumerate():
+				vid = device_dict.get('vendor_id', None)
+				pid = device_dict.get('product_id', None)
+				snum = device_dict.get('serial_number', None)
+
+				if (vid==vendor_id) & (pid==product_id) & (snum==serial_number):
+					path = device_dict.get('path', None)
+					break
+			
+			h.open_path(path) # Open HID device by path
+		return h
 
 	def initialize(self):
 		pass  # Remove this function eventually

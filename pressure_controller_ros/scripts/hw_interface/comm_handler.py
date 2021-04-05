@@ -32,12 +32,13 @@ class CommHandler(object):
 
         vendor_id = rospy.get_param(rospy.get_name()+'/vendor_id',None)
         product_id = rospy.get_param(rospy.get_name()+'/product_id',None)
+        serial_number = rospy.get_param(rospy.get_name()+'/serial_number',None)
 
         if devname is not None:
             self.comms = serial_coms.SerialComs(devname, baud)
             self.comms.DEBUG = self.DEBUG
         elif vendor_id is not None:
-            self.comms = HID_coms.HIDComs(vendor_id, product_id)
+            self.comms = HID_coms.HIDComs(vendor_id, product_id, serial_number)
             self.comms.DEBUG = self.DEBUG
         else:
             print("NO COMUNICATION INTERFACES PRESENT")
