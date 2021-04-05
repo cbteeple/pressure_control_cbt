@@ -15,6 +15,8 @@
 
 <!-- Generate helper arguments -->
 <arg name="_path_helper" value="$(eval find(arg('config_package')))" />
+<arg name="_suffix_helper"     if="$(arg suffix)" value="_$(arg suffix)"  />
+<arg name="_suffix_helper" unless="$(arg suffix)" value=""  />
 
 <!-- Start the main plotting interface -->
   <include file="$(find pressure_controller_ros)/launch/plotting.launch">
@@ -26,7 +28,7 @@
 <!-- Load controller settings -->
   <group>
   	<!-- Start the main serial sender -->
-  	<node name="pressure_control_server_node_$(arg suffix)" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
+  	<node name="pressure_control_server_node$(arg _suffix_helper)" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
     	output="screen">
       <rosparam file="$(arg _path_helper)/config/comms/$(arg hw_profile).yaml" command="load"/>
       <param name="DEBUG" type="bool" value="$(arg debug)"/>
@@ -35,7 +37,7 @@
 
     <!-- Load the config node and settings.
          This will wait for the command server to be set up -->
-    <node name="config_node_$(arg suffix)" pkg="pressure_controller_ros" type="config.py" respawn="false"
+    <node name="config_node$(arg _suffix_helper)" pkg="pressure_controller_ros" type="config.py" respawn="false"
     	output="screen">
     	<rosparam file="$(arg _path_helper)/config/control/$(arg profile).yaml" command="load"/>
       <param name="profile_name" type="string" value="$(arg profile)"/>
@@ -44,7 +46,7 @@
 
     <!-- Load the setpoint node and settings.
          This needs to wait for the config process to finish-->
-    <node name="setpoint_server_node_$(arg suffix)" pkg="pressure_controller_ros" type="setpoint_server.py" respawn="false"
+    <node name="setpoint_server_node$(arg _suffix_helper)" pkg="pressure_controller_ros" type="setpoint_server.py" respawn="false"
       output="screen">
       <param name="DEBUG" type="bool" value="$(arg debug)"/>
     </node>
