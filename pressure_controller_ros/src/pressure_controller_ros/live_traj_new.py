@@ -42,7 +42,7 @@ class trajSender:
         self.speed_multiplier = 1./speed_factor
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
-        self.num_channels = rospy.get_param('/config_node/channels/num_channels')
+        self.num_channels = np.sum(rospy.get_param(self._name+'/num_channels'))
 
         
 

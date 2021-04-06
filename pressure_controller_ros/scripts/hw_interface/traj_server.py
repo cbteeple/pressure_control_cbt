@@ -69,9 +69,6 @@ class TrajAction(object):
             self.traj_points.append(point.pressures)
             self.traj_times.append(point.time_from_start.to_sec())
 
-        print(self.traj_points)
-        print(self.traj_times)
-
         traj_interp = interp1d(self.traj_times,self.traj_points, axis=0)
 
         

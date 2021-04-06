@@ -76,6 +76,9 @@ class CommHandler(object):
         # Start some message publishers and subscribers
         self.data_pub = rospy.Publisher(self.data_channel+'/pressure_data', msg.DataIn, queue_size=10)
         self.echo_pub = rospy.Publisher(self.data_channel+'/echo', msg.Echo, queue_size=10)
+        
+        
+        rospy.set_param(self.data_channel+'/num_channels',[self.comms[idx]['num_channels'] for idx in range(len(self.comms))])
 
         self.command_handler = CommandHandler(self.comms)
         for comm in self.comms:
