@@ -40,7 +40,7 @@ class trajSender:
             speed_factor = 1.0
 
         self.speed_multiplier = 1./speed_factor
-        self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
+        self.DEBUG = rospy.get_param(rospy.get_name()+"/debug",False)
 
         self.num_channels = np.sum(rospy.get_param(self._name+'/num_channels'))
 
@@ -80,8 +80,8 @@ class trajSender:
         traj_arr = np.asarray(traj)
         # If the trajectory is too small, pad with zeros
         if num_pad>0:
-            pad = np.zeros(len(traj),num_pad)
-            traj_arr = np.concatenate(traj_arr, pad, axis=1)
+            pad = np.zeros((len(traj),num_pad))
+            traj_arr = np.hstack((traj_arr, pad))
 
             rospy.loginfo('%s: Padding trajectory with %d columns of zeros.' % (rospy.get_name(), num_pad))
 
@@ -117,7 +117,7 @@ class trajSender:
 
 
     def go_to_start(self, traj_goal, reset_time, blocking=True):
-        self.start_pressures = traj_goal[0][1:]
+        self.start_pressures = self.fix_traj([traj_goal[0]])[0][1:]
 
         if self._name !='servo':
             self.send_command("_flush",[])
@@ -127,12 +127,15 @@ class trajSender:
         self.send_command("echo",False,wait_for_ack = False)      
         self.send_command("on",[],wait_for_ack = False)
 
+        print('Waiting for current state')
         current_states = rospy.wait_for_message("/"+self._name+"/pressure_data", DataIn)
+        print('Got current state')
 
         goal_tmp = PressureTrajectoryGoal()
         goal_tmp.trajectory = PressureTrajectory()
 
-        print(current_states.measured)
+        print(len(current_states.measured),current_states.measured)
+        print(len(self.start_pressures),self.start_pressures)
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=current_states.measured, time_from_start=rospy.Duration(0.0)))
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=self.start_pressures, time_from_start=rospy.Duration(traj_goal[0][0])))
 

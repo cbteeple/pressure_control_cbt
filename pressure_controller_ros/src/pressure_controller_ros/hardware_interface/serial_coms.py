@@ -106,13 +106,13 @@ class SerialComs:
 
 	def start_read_thread(self, reading_cb=None, poll_rate=None):
 		if not reading_cb and not poll_rate:
-			self.reader = SerialReadWriteThreaded(self.s)
+			self.reader = SerialReadWriteThreaded(self.s, devnum=self.devnum)
 		elif reading_cb and not poll_rate:
-			self.reader = SerialReadWriteThreaded(self.s, reading_cb=reading_cb)
+			self.reader = SerialReadWriteThreaded(self.s, reading_cb=reading_cb, devnum=self.devnum)
 		elif not reading_cb and poll_rate:
-			self.reader = SerialReadWriteThreaded(self.s, poll_rate=poll_rate)
+			self.reader = SerialReadWriteThreaded(self.s, poll_rate=poll_rate, devnum=self.devnum)
 		else:
-			self.reader = SerialReadWriteThreaded(self.s, reading_cb=reading_cb, poll_rate=poll_rate)
+			self.reader = SerialReadWriteThreaded(self.s, reading_cb=reading_cb, poll_rate=poll_rate, devnum=self.devnum)
 
 		self.reader.DEBUG= self.DEBUG
 

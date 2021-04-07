@@ -121,13 +121,13 @@ class HIDComs:
 
 	def start_read_thread(self, reading_cb=None, poll_rate=None):
 		if not reading_cb and not poll_rate:
-			self.reader = HIDReadWriteThreaded(self.h)
+			self.reader = HIDReadWriteThreaded(self.h, devnum=self.devnum)
 		elif reading_cb and not poll_rate:
-			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb)
+			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb, devnum=self.devnum)
 		elif not reading_cb and poll_rate:
-			self.reader = HIDReadWriteThreaded(self.h, poll_rate=poll_rate)
+			self.reader = HIDReadWriteThreaded(self.h, poll_rate=poll_rate, devnum=self.devnum)
 		else:
-			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb, poll_rate=poll_rate)
+			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb, poll_rate=poll_rate, devnum=self.devnum)
 
 		self.reader.DEBUG= self.DEBUG
 		self.reader.start_threaded()
