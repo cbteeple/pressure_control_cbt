@@ -5,7 +5,7 @@ import os
 
 search = ['ttyUSB', 'ttyACM']
 
-def find_port(search=None):
+def find_ports(search=None):
     all_port_tuples = list_ports.comports()
     all_ports = set()
     for ap, _, _ in all_port_tuples:
@@ -19,7 +19,7 @@ def find_port(search=None):
     return list(all_ports)
 
 
-all_ports = find_port(search)
+all_ports = find_ports(search)
 
 if len(all_ports) >0:
     print("========================================")
