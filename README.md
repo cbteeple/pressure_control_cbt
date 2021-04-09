@@ -9,16 +9,14 @@ A module to do pressure control in ROS with a Ctrl-P pressure control system.
 ### Software
 - [ROS Melodic](http://wiki.ros.org/melodic/Installation)
 - The [rqt_multiplot](http://wiki.ros.org/rqt_multiplot) package for nice plot layouts and custom axes
-- [Cython HID Library](https://github.com/trezor/cython-hidapi) from Trezor
+- Before installing python dependencies, [Cython HID Library](https://github.com/trezor/cython-hidapi) from Trezor has a few extra requirements on Ubuntu:
+	``` bash
+	sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev
+	sudo pip install --upgrade setuptools
+	```
 - Various python libraries:
-	- [scipy](https://www.scipy.org/) (`pip install scipy`)
-	- [numpy](https://www.numpy.org/) (`pip install numpy`)
-	- [numbers](https://docs.python.org/2/library/numbers.html) (`pip install numbers`)
-	- [matplotlib](https://matplotlib.org/) (`pip install matplotlib`)
-	- [pynput](https://pypi.org/project/pynput/) (`pip install pynput`)
-	- [yaml](https://pyyaml.org/wiki/PyYAMLDocumentation) (`pip install pyyaml`)
-	- [colorama](https://pypi.org/project/colorama) (`pip install colorama`)
-	- [termcolor](https://pypi.org/project/termcolor) (`pip install termcolor`)
+	- All python dependencies are managed in the reqirements file. `pip install -r requirements.txt`
+
 
 ## Installation
 1. Add this package to your `workspace/src` folder.
