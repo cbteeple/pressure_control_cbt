@@ -1,5 +1,8 @@
-# Ctrl-P 2.0: ROS Driver
+# Ctrl-P: ROS Driver
 A module to do pressure control in ROS with a Ctrl-P pressure control system.
+
+## Versions
+You can always keep up to date by using the version in the master branch. For previous stable versions, checkout the [releases](https://github.com/cbteeple/pressure_control_cbt/releases).
 
 ## Dependencies
 ### Hardware
