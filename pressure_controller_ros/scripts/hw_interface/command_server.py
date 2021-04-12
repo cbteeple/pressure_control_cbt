@@ -16,7 +16,7 @@ class CommandAction(object):
     _feedback = msg.CommandFeedback()
     _result = msg.CommandResult()
 
-    def __init__(self, name, comms_obj):
+    def __init__(self, name, comms_obj, command_handler):
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
@@ -25,6 +25,8 @@ class CommandAction(object):
 
         self.comms=comms_obj
 
+        self.command_handler = command_handler
+
         # Start some message publishers and subscribers
         rospy.Subscriber(self._action_name+'/echo', msg.Echo, self.ack_waiter)
 
@@ -32,6 +34,35 @@ class CommandAction(object):
         # Start an actionlib server
         self._as = actionlib.SimpleActionServer(self._action_name, msg.CommandAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
+
+
+    def send_command(self, cmd, args):
+        """
+        Split up commands to various devices
+
+        Parameters
+        ----------
+		cmd : str
+            a command to use
+		args : list
+            arguments for the command
+
+		OUTPUTS:
+			out_str - the output string sent
+        """
+
+        # Split the command into two:
+        commands = self.command_handler.split_command(cmd, args)
+
+        if len(commands) != len(self.comms):
+            raise ValueError("COMM HANDLER: length of command list does not equal the number of devices")
+
+        cmd_str = ""
+        for idx, command in enumerate(commands):
+            if command is not None:
+                cmd_str+= self.comms[idx]['interface'].sendCommand(command['command'],command['values'], self.comms[idx]['cmd_format'])
+        
+        return cmd_str
 
 
     def execute_cb(self, goal):
@@ -52,7 +83,8 @@ class CommandAction(object):
 
             if "flush"  in goal.command:
                 rospy.loginfo('%s: Flushing serial coms' % (self._action_name))
-                self.comms.flushAll()
+                for comm in self.comms:
+                    comm['interface'].flushAll()
 
             self._feedback.success = True
             self._as.publish_feedback(self._feedback)
@@ -65,7 +97,10 @@ class CommandAction(object):
                 self._as.set_preempted()
             else:
 
-                self._feedback.out_string = self.comms.sendCommand(goal.command, goal.args)
+                cmd_str = self.send_command(goal.command, goal.args)
+
+                self._feedback.out_string = cmd_str
+                #self._feedback.out_string = self.comms.sendCommand(goal.command, goal.args)
                 self._feedback.sent = True
 
                 if goal.wait_for_ack:

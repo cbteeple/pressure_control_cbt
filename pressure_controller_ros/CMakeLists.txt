@@ -52,6 +52,7 @@ add_message_files(
   FILES
     Echo.msg
     DataIn.msg
+    DataInSep.msg
     PressureTrajectory.msg
     PressureTrajectoryPoint.msg
     TrialSuccess.msg

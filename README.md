@@ -1,5 +1,8 @@
-# Ctrl-P 2.0: ROS Driver
+# Ctrl-P: ROS Driver
 A module to do pressure control in ROS with a Ctrl-P pressure control system.
+
+## Versions
+You can always keep up to date by using the version in the master branch. For previous stable versions, checkout the [releases](https://github.com/cbteeple/pressure_control_cbt/releases).
 
 ## Dependencies
 ### Hardware
@@ -9,20 +12,22 @@ A module to do pressure control in ROS with a Ctrl-P pressure control system.
 ### Software
 - [ROS Melodic](http://wiki.ros.org/melodic/Installation)
 - The [rqt_multiplot](http://wiki.ros.org/rqt_multiplot) package for nice plot layouts and custom axes
-- [Cython HID Library](https://github.com/trezor/cython-hidapi) from Trezor
+- [Cython HID Library](https://github.com/trezor/cython-hidapi) from Trezor:
+- The [Python Control Interface](https://github.com/cbteeple/pressure_control_interface) package for this project
 - Various python libraries:
-	- [scipy](https://www.scipy.org/) (`pip install scipy`)
-	- [numpy](https://www.numpy.org/) (`pip install numpy`)
-	- [numbers](https://docs.python.org/2/library/numbers.html) (`pip install numbers`)
-	- [matplotlib](https://matplotlib.org/) (`pip install matplotlib`)
-	- [pynput](https://pypi.org/project/pynput/) (`pip install pynput`)
-	- [yaml](https://pyyaml.org/wiki/PyYAMLDocumentation) (`pip install pyyaml`)
-	- [colorama](https://pypi.org/project/colorama) (`pip install colorama`)
-	- [termcolor](https://pypi.org/project/termcolor) (`pip install termcolor`)
+	- All python dependencies are managed in the reqirements file. `pip install -r requirements.txt`
+
 
 ## Installation
-1. Add this package to your `workspace/src` folder.
-2. Run `catkin_make` to enable the custom python modules in this package to work
+1. Clone the [Python Control Interface](https://github.com/cbteeple/pressure_control_interface) package to the `src` folder of your catkin workspace.
+2. Clone this package to the `src` folder of your catkin workspace.
+3. Install cython-hid dependencies (as specified in the Cython HID Library)
+	``` bash
+	sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev
+	sudo pip install --upgrade setuptools
+	```
+4. In the root folder of this package, run `pip install -r requirements.txt` to install python dependencies.
+5. In the root folder of your catkin workspace, run `catkin_make` to enable the custom python modules in this package to work.
 
 
 ## Usage

@@ -30,7 +30,7 @@
   	<!-- Start the main serial sender -->
   	<node name="pressure_control_server_node$(arg _suffix_helper)" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
     	output="screen">
-    	<rosparam file="$(arg _path_helper)/config/comms/$(arg hw_profile).yaml" command="load"/>
+    	<rosparam file="$(arg _path_helper)/config/hardware/$(arg hw_profile).yaml" command="load"/>
       <param name="DEBUG" type="bool" value="$(arg debug)"/>
       <param name="traj_server_rate" type="double" value="$(arg traj_server_rate)"/>
     </node>

@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-import serial
 import numbers
 import threading
 import rospy
 import time
 import hid
 
+from pressure_control_interface.utils.comm_handler import build_cmd_string
 
 
 class Error(Exception):
@@ -30,10 +30,11 @@ OUTPUTS:
 	s - the serial object created
 """	
 class HIDComs:
-	def __init__(self, vendor_id, product_id, serial_number=None):
+	def __init__(self, vendor_id, product_id, serial_number=None, devnum=0):
 		self.connected = False
 		try:
 			self.h = self.get_device(vendor_id, product_id, serial_number)
+			self.devnum = devnum
 			
 			# enable non-blocking mode
 			self.h.set_nonblocking(1)
@@ -80,22 +81,31 @@ class HIDComs:
 		#self.h.reset_output_buffer()
 
 
-	def sendCommand(self, command, values):
-		"""Send commands via serial
-		INPUTS:
-			command - a command to use
-			args    - arguments for the command
+	def sendCommand(self, command, values, format="%0.2f"):
+		"""
+		Send commands to the device
 
-		OUTPUTS:
+		Parameters
+		----------
+		command : string
+			a command to use
+		args : list, tuple, or number
+			arguments for the command
+		format : str
+			format string for arguments
+
+		Returns
+		-------
 			out_str - the output string sent
 		"""
-		command_toSend = command
-		if isinstance(values, list) or isinstance(values, tuple):
-			if values:
-				for val in values:
-					command_toSend+= ";%0.2f"%(val)
-		elif isinstance(values, numbers.Number):
-			command_toSend+=";%0.2f"%(values)
+
+		if self.DEBUG:
+			print("HID_COMMS:",command,values)
+
+		command_toSend = ""
+		if isinstance(values, list) or isinstance(values, tuple) or isinstance(values, numbers.Number):
+			command_toSend = build_cmd_string(command, values, format)
+
 		else:
 			raise ValueError('sendCommand expects either a list or a number')
 
@@ -111,13 +121,13 @@ class HIDComs:
 
 	def start_read_thread(self, reading_cb=None, poll_rate=None):
 		if not reading_cb and not poll_rate:
-			self.reader = HIDReadWriteThreaded(self.h)
+			self.reader = HIDReadWriteThreaded(self.h, devnum=self.devnum)
 		elif reading_cb and not poll_rate:
-			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb)
+			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb, devnum=self.devnum)
 		elif not reading_cb and poll_rate:
-			self.reader = HIDReadWriteThreaded(self.h, poll_rate=poll_rate)
+			self.reader = HIDReadWriteThreaded(self.h, poll_rate=poll_rate, devnum=self.devnum)
 		else:
-			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb, poll_rate=poll_rate)
+			self.reader = HIDReadWriteThreaded(self.h, reading_cb=reading_cb, poll_rate=poll_rate, devnum=self.devnum)
 
 		self.reader.DEBUG= self.DEBUG
 		self.reader.start_threaded()
@@ -139,10 +149,11 @@ class HIDComs:
 
 
 class HIDReadWriteThreaded:
-	def __init__(self, hid_in, reading_cb = None, poll_rate = 2000):
+	def __init__(self, hid_in, reading_cb = None, poll_rate = 2000, devnum=0):
 		self.h = hid_in
 		self.r = rospy.Rate(poll_rate)
 		self.reading_cb = reading_cb
+		self.devnum = devnum
 
 		self.command_toSend = None
 		self.curr_send_time = rospy.get_rostime().to_nsec()
@@ -188,7 +199,8 @@ class HIDReadWriteThreaded:
 					print("READ: %0.4f ms"%((self.curr_read_time-self.last_read_time)/1000000.0))
 					self.last_read_time = self.curr_read_time
 
-				self.reading_cb(raw_reading);
+				sendout = {'devnum':self.devnum, 'data':raw_reading}
+				self.reading_cb(sendout);
 			else:
 				self.r.sleep()
 

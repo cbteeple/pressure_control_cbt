@@ -16,17 +16,47 @@ class TrajAction(object):
     _feedback = msg.PressureTrajectoryFeedback()
     _result = msg.PressureTrajectoryResult()
 
-    def __init__(self, name, comms_obj, controller_rate=500):
+    def __init__(self, name, comm_obj, command_handler, controller_rate=500):
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
         self._action_name = name
-        self.comms=comms_obj
         self.controller_rate=controller_rate
+        self.comms = comm_obj
+        self.command_handler = command_handler
 
         # Start an actionlib server
         self._as = actionlib.SimpleActionServer('/'+self._action_name+'/pressure_trajectory', msg.PressureTrajectoryAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
+
+
+    def send_command(self, cmd, args):
+        """
+        Split up commands to various devices
+
+        Parameters
+        ----------
+		cmd : str
+            a command to use
+		args : list
+            arguments for the command
+
+		OUTPUTS:
+			out_str - the output string sent
+        """
+
+        # Split the command into two:
+        commands = self.command_handler.split_command(cmd, args)
+
+        if len(commands) != len(self.comms):
+            raise ValueError("COMM HANDLER: length of command list does not equal the number of devices")
+
+        cmd_str = ""
+        for idx, command in enumerate(commands):
+            if command is not None:
+                cmd_str+= self.comms[idx]['interface'].sendCommand(command['command'],command['values'], self.comms[idx]['cmd_format'])
+        
+        return cmd_str
 
 
     def execute_cb(self, goal):
@@ -38,9 +68,6 @@ class TrajAction(object):
         for point in traj:
             self.traj_points.append(point.pressures)
             self.traj_times.append(point.time_from_start.to_sec())
-
-        print(self.traj_points)
-        print(self.traj_times)
 
         traj_interp = interp1d(self.traj_times,self.traj_points, axis=0)
 
@@ -77,7 +104,7 @@ class TrajAction(object):
                 new_pressures = traj_interp(curr_time.to_sec()).tolist()
 
                 # Send pressure setpoint to the controller
-                self.comms.sendCommand("set", [1/self.controller_rate] + new_pressures)
+                self.send_command("set", [1/self.controller_rate] + new_pressures)
 
 
                 # Update the server
@@ -87,7 +114,8 @@ class TrajAction(object):
                 r.sleep()
                 idx += 1
 
-        self.comms.sendCommand("set", [1/self.controller_rate] + list(self.traj_points[-1]))
+        self.send_command("set", [1/self.controller_rate] + list(self.traj_points[-1]))
+        
 
 
 

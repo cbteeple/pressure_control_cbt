@@ -6,6 +6,7 @@ import threading
 import rospy
 import time
 
+from pressure_control_interface.utils.comm_handler import build_cmd_string
 
 
 class Error(Exception):
@@ -29,9 +30,10 @@ OUTPUTS:
 	s - the serial object created
 """	
 class SerialComs:
-	def __init__(self, devname,baud):
+	def __init__(self, devname,baud, devnum=0):
 		self.connected = False
 		self.DEBUG = False
+		self.devnum = devnum
 		try:
 			if self.DEBUG:
 				print(devname)
@@ -63,28 +65,33 @@ class SerialComs:
 		self.s.reset_output_buffer()
 
 
-	def sendCommand(self, command, values):
-		"""Send commands via serial
-		INPUTS:
-			command - a command to use
-			args    - arguments for the command
+	def sendCommand(self, command, values):		
+		"""
+		Send commands to the device
 
-		OUTPUTS:
+		Parameters
+		----------
+		command : string
+			a command to use
+		args : list, tuple, or number
+			arguments for the command
+		format : str
+			format string for arguments
+
+		Returns
+		-------
 			out_str - the output string sent
 		"""
+
 		if self.DEBUG:
 			print("SERIAL_COMS:",command,values)
-		command_toSend = command
-		if isinstance(values, list) or isinstance(values, tuple):
-			if values:
-				for val in values:
-					command_toSend+= ";%0.5f"%(val)
-		elif isinstance(values, numbers.Number):
-			command_toSend+=";%0.5f"%(values)
+
+		command_toSend = ""
+		if isinstance(values, list) or isinstance(values, tuple) or isinstance(values, numbers.Number):
+			command_toSend = build_cmd_string(command, values, format)
+
 		else:
 			raise ValueError('sendCommand expects either a list or a number')
-
-		#self.s.write(command_toSend +'\n')
 
 
 		#Share the value with the main looping thread
@@ -99,13 +106,13 @@ class SerialComs:
 
 	def start_read_thread(self, reading_cb=None, poll_rate=None):
 		if not reading_cb and not poll_rate:
-			self.reader = SerialReadWriteThreaded(self.s)
+			self.reader = SerialReadWriteThreaded(self.s, devnum=self.devnum)
 		elif reading_cb and not poll_rate:
-			self.reader = SerialReadWriteThreaded(self.s, reading_cb=reading_cb)
+			self.reader = SerialReadWriteThreaded(self.s, reading_cb=reading_cb, devnum=self.devnum)
 		elif not reading_cb and poll_rate:
-			self.reader = SerialReadWriteThreaded(self.s, poll_rate=poll_rate)
+			self.reader = SerialReadWriteThreaded(self.s, poll_rate=poll_rate, devnum=self.devnum)
 		else:
-			self.reader = SerialReadWriteThreaded(self.s, reading_cb=reading_cb, poll_rate=poll_rate)
+			self.reader = SerialReadWriteThreaded(self.s, reading_cb=reading_cb, poll_rate=poll_rate, devnum=self.devnum)
 
 		self.reader.DEBUG= self.DEBUG
 
@@ -123,9 +130,10 @@ class SerialComs:
 
 
 class SerialReadWriteThreaded:
-	def __init__(self, serial_in, reading_cb = None, poll_rate = 100000):
+	def __init__(self, serial_in, reading_cb = None, poll_rate = 100000, devnum=0):
 		self.s = serial_in
 		self.r = rospy.Rate(poll_rate);
+		self.devnum = devnum
 
 		self.command_toSend = None
 		self.curr_send_time = rospy.get_rostime().to_nsec()
@@ -183,7 +191,8 @@ class SerialReadWriteThreaded:
 					print("READ: %0.4f ms"%((self.curr_read_time-self.last_read_time)/1000000.0))
 					self.last_read_time = self.curr_read_time
 
-				self.reading_cb(raw_reading);
+				sendout = {'devnum':self.devnum, 'data':raw_reading}
+				self.reading_cb(sendout);
 			else:
 				self.r.sleep()
 

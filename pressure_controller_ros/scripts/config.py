@@ -69,9 +69,13 @@ class configSender:
             else:
                 self.send_command("mode",1)
 
-            
-            self.send_command("echo",bool(self.config.get("echo")))
+            self.send_command("currtime",0)
             self.send_command("save",[], wait_for_ack=False)
+
+            self.send_command("on",[])
+            time.sleep(3.0)
+            self.send_command("off",[])
+            self.send_command("echo",bool(self.config.get("echo")))
 
 
     def send_command(self, command, args, wait_for_ack = True):
