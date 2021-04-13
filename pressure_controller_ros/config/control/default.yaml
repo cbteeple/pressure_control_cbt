@@ -15,7 +15,19 @@ data_loop_time: 20 #[ms]
 #   If "all-equal" is False, then settings for all channels must be specified as a list of lists
 PID:
     all_equal: True
+    integrator_start: 5.0
     values: [0.2000, 0.0030, 0.0030]
+
+# Valve PWM offsets (set between 0 and 255 for the source and vent valves)
+valve_offsets:
+    - [227,226]
+    - [224,224]
+    - [225,225]
+    - [225,225]
+    - [225,225]
+    - [225,225]
+    - [225,225]
+    - [225,225]
 
 # Set the max and min pressures in software [psi]
 #   If single value, then it will be set for all channels

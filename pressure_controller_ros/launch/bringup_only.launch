@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<launch>
+
+
+<!-- To use this   -->
+
+<!-- get the arguments from  -->
+<arg name="debug" default="False" doc="Whether debug is on" />
+<arg name="plot_profile" default="2channels_pts" doc="The plotting config profile" />
+<arg name="suffix" default="0" doc="Suffix to add to nodes" />
+<arg name="hw_profile" default="hid_config" doc="The hardware config profile" />
+<arg name="config_package" default="pressure_controller_ros" doc="The package where config profiles are stored" />
+<arg name="traj_server_rate" default="200" doc="The speed of the trajectory server" />
+
+<!-- Generate helper arguments -->
+<arg name="_path_helper" value="$(eval find(arg('config_package')))" />
+<arg name="_suffix_helper"     if="$(arg suffix)" value="_$(arg suffix)"  />
+<arg name="_suffix_helper" unless="$(arg suffix)" value=""  />
+
+<!-- Start the main plotting interface -->
+  <include file="$(find pressure_controller_ros)/launch/plotting.launch">
+    <arg name="plot_profile" value="$(arg plot_profile)"/>
+    <arg name="config_package" value="$(arg config_package)"/>
+  </include>
+  
+
+<!-- Load controller settings -->
+  <group>
+  	<!-- Start the main serial sender -->
+  	<node name="pressure_control_server_node$(arg _suffix_helper)" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
+    	output="screen">
+      <rosparam file="$(arg _path_helper)/config/hardware/$(arg hw_profile).yaml" command="load"/>
+      <param name="DEBUG" type="bool" value="$(arg debug)"/>
+      <param name="traj_server_rate" type="double" value="$(arg traj_server_rate)"/>
+    </node>
+</launch>
