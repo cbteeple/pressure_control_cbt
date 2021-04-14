@@ -198,19 +198,7 @@ class MyPlugin(Plugin):
         self.settings['valve_offsets'][idx][0]=v1
         self.settings['valve_offsets'][idx][1]=v2
 
-        if self._client_connected:
-            # Send commands to the command server and wait for things to be taken care of
-            goal = pressure_controller_ros.msg.CommandGoal(command='voffset', args=[idx, v1, v2], wait_for_ack = False)
-            self._client.send_goal(goal)
-            self._client.wait_for_result()
-
-            if not self._client.get_result():
-                raise ('Something went wrong and a setting was not validated')
-                pass
-            else:
-                pass
-        else:
-            print(idx, v1, v2)
+        self.send_command(command='voffset', args=[idx, v1, v2])
 
 
     def send_channel_state(self, idx, state):
@@ -220,21 +208,9 @@ class MyPlugin(Plugin):
         else:
             self.settings['channel_states'][idx] = 0
             self.sliders[idx]['on_off'].setText("Off")
-        
-        if self._client_connected:
-            # Send commands to the command server and wait for things to be taken care of
-            goal = pressure_controller_ros.msg.CommandGoal(command='chan', args=self.settings['channel_states'], wait_for_ack = False)
-            self._client.send_goal(goal)
-            self._client.wait_for_result()
 
-            if not self._client.get_result():
-                raise ('Something went wrong and a setting was not validated')
-                pass
-            else:
-                pass
-        else:
-            print(self.settings['channel_states'])
-
+        self.send_command(command='chan', args=self.settings['channel_states'])
+         
 
     def set_graph_state(self, value):
 
@@ -245,14 +221,23 @@ class MyPlugin(Plugin):
             on_off_str='off'
             self.graph_button.setText("Graph OFF")
 
+        self.send_command(command=on_off_str, args=[])
 
+
+    def send_command(self, command, args, wait_for_ack=False):
         if self._client_connected:
             # Send commands to the command server and wait for things to be taken care of
-            goal = pressure_controller_ros.msg.CommandGoal(command=on_off_str, args=[], wait_for_ack = False)
+            goal = pressure_controller_ros.msg.CommandGoal(command=command, args=args, wait_for_ack = False)
             self._client.send_goal(goal)
             self._client.wait_for_result()
+
+            if not self._client.get_result():
+                raise ('Something went wrong and a setting was not validated')
+                pass
+            else:
+                pass
         else:
-            print(on_off_str)
+            print(command, args)
 
 
 
@@ -261,7 +246,11 @@ class MyPlugin(Plugin):
         print("Final Valve Offsets:")
         print(self.settings['valve_offsets'])
         print("")
-        print("Copy these settings into 'valve_offsets' in your control config file")
+        print("These settings were saved on the pressure controller")
+        print("")
+        print("To ensure these parameters are always recalled, you can either:")
+        print("    1) Copy these settings into 'valve_offsets' in all your control config files")
+        print("    2) Remove the 'valve_offsets' parameter from your control config files")
 
         self.set_graph_state(False)
 
@@ -272,10 +261,14 @@ class MyPlugin(Plugin):
                 else:
                     slider_group[widget].valueChanged.disconnect()
         
+    def save_mcu_settings(self):
+        self.send_command(command='save', args=[])
+
 
     def shutdown_plugin(self):
         self._client.cancel_all_goals()
         self.shutdown_sliders()
+        self.save_mcu_settings()
 
     def save_settings(self, plugin_settings, instance_settings):
         # TODO save intrinsic configuration, usually using:
