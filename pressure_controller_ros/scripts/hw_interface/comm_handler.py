@@ -25,7 +25,7 @@ from pressure_control_interface.utils.comm_handler import CommandHandler
 class CommHandler(object):
     def __init__(self, name):
 
-        self.DEBUG =  False# rospy.get_param(rospy.get_name()+"/debug",False)
+        self.DEBUG =  rospy.get_param(rospy.get_name()+"/DEBUG",False)
         self.data_channel = rospy.get_param(rospy.get_name()+"/data_channel","pressure_control")
         self.use_separate_topics = rospy.get_param(rospy.get_name()+"/separate_topics" , False)
 
