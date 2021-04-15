@@ -2,9 +2,9 @@
 
 import sys
 
-from pressure_calibrate.my_module import MyPlugin
+from pressure_controller_setup.calibrate_valves import MyPlugin
 from rqt_gui.main import Main
 
-plugin = 'pressure_calibrate'
+plugin = 'pressure_controller_setup.calibrate_valves'
 main = Main(filename=plugin)
 sys.exit(main.main(standalone=plugin))
