@@ -54,6 +54,9 @@ class CommandAction(object):
         # Split the command into two:
         commands = self.command_handler.split_command(cmd, args)
 
+        if self.DEBUG:
+            rospy.loginfo(commands)
+
         if len(commands) != len(self.comms):
             raise ValueError("COMM HANDLER: length of command list does not equal the number of devices")
 

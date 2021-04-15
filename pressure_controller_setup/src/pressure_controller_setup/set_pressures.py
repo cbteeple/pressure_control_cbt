@@ -167,7 +167,7 @@ class MyPlugin(Plugin):
                 layout.setAlignment(spinbox, Qt.AlignHCenter)
 
                 label = QLabel()
-                label.setText("Chan. %d"%(chan_idx))
+                label.setText("Chan. %d"%(chan_idx+1))
                 label.setAlignment(Qt.AlignCenter)
                 layout_cluster.addWidget(label)
                 layout_cluster.addLayout(layout)

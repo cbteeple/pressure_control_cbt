@@ -137,7 +137,7 @@ class MyPlugin(Plugin):
                 layout_cluster = QVBoxLayout()
                 slider_cluster = QHBoxLayout()
                 label = QLabel()
-                label.setText("Chan. %d"%(idx))
+                label.setText("Chan. %d"%(idx+1))
                 label.setAlignment(Qt.AlignCenter)
                 layout_cluster.addWidget(label)
                 for j in range(2):
