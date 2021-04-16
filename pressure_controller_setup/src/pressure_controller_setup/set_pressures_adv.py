@@ -523,8 +523,8 @@ class MyPlugin(Plugin):
 
         for slider_group in self.sliders:
             for slider in slider_group['sliders']:
-                for widget in slider:
-                    slider[widget].valueChanged.disconnect()
+                slider['slider'].valueChanged.disconnect()
+                slider['number'].valueChanged.disconnect()
 
             on_off = slider_group['on_off']
             on_off.clicked.disconnect()
