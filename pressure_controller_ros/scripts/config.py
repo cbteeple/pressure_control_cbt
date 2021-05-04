@@ -18,14 +18,14 @@ import sys
 import os
 import numbers
 
-from bondpy import bondpy
+#from bondpy import bondpy
 
 
 
 class configSender:
     def __init__(self):
-        self.bond = bondpy.Bond("wait_for_config_topic",'abc123')
-        self.bond.start()
+        #self.bond = bondpy.Bond("wait_for_config_topic",'abc123')
+        #self.bond.start()
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
@@ -42,7 +42,6 @@ class configSender:
     def set_config(self):
 
         if self.config:
-
             self.send_command("_flush",[])
             self.send_command("echo",True)
             self.send_command("load",[])  
@@ -117,7 +116,7 @@ class configSender:
 
     def shutdown(self):
         self._client.cancel_all_goals()
-        self.bond.break_bond()
+        #self.bond.break_bond()
 
         
 
