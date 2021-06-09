@@ -76,10 +76,20 @@ class MyPlugin(Plugin):
         graph_button.setText("Graph Off")
         graph_button.toggle()
         graph_button.clicked.connect(self.set_graph_state)
+
+        reset_button=QPushButton()
+        reset_button.setCheckable(False)
+        reset_button.setText("Reset")
+        reset_button.clicked.connect(self.set_reset)
+
         self.graph_button = graph_button
+        self.reset_button = reset_button
 
         firstCol.addWidget(graph_button)
+        firstCol.addWidget(reset_button)
+
         firstCol.setAlignment(graph_button,Qt.AlignVCenter)
+        firstCol.setAlignment(reset_button,Qt.AlignVCenter)
 
         zero_button=QPushButton()
         zero_button.setCheckable(False)
@@ -280,6 +290,10 @@ class MyPlugin(Plugin):
             self.graph_button.setText("Graph OFF")
 
         self.send_command(command=on_off_str, args=[])
+
+
+    def set_reset(self, value):
+        self.send_command(command='mode', args=[3])
 
 
     def send_command(self, command, args, wait_for_ack=False):
