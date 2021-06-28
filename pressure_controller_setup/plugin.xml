@@ -1,22 +1,4 @@
-<library path="src">
-  <class name="Pressure Calibration" type="pressure_controller_setup.calibrate_valves.MyPlugin" base_class_type="rqt_gui_py::Plugin">
-    <description>
-      Calibrate valve offsets
-    </description>
-    <qtgui>
-      <!-- optional grouping...
-      <group>
-        <label>Group</label>
-      </group>
-      <group>
-        <label>Subgroup</label>
-      </group>
-      -->
-      <label>Calibrate Valves</label>
-      <icon type="theme">system-help</icon>
-      <statustip>Great user interface to provide real value.</statustip>
-    </qtgui>
-  </class>
+<library path="src/pressure_controller_setup">
   <class name="Pressure Calibration" type="pressure_controller_setup.calibrate_pid.MyPlugin" base_class_type="rqt_gui_py::Plugin">
     <description>
       Calibrate PID gains
@@ -35,6 +17,26 @@
       <statustip>Great user interface to provide real value.</statustip>
     </qtgui>
   </class>
+
+  <class name="Pressure Calibration" type="pressure_controller_setup.calibrate_valves.MyPlugin" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      Calibrate valve offsets
+    </description>
+    <qtgui>
+      <!-- optional grouping...
+      <group>
+        <label>Group</label>
+      </group>
+      <group>
+        <label>Subgroup</label>
+      </group>
+      -->
+      <label>Calibrate Valves</label>
+      <icon type="theme">system-help</icon>
+      <statustip>Great user interface to provide real value.</statustip>
+    </qtgui>
+  </class>
+
   <class name="Set Pressures Manually" type="pressure_controller_setup.set_pressures_basic.MyPlugin" base_class_type="rqt_gui_py::Plugin">
     <description>
       Manual control of individual pressures
@@ -53,6 +55,7 @@
       <statustip>Great user interface to provide real value.</statustip>
     </qtgui>
   </class>
+  
   <class name="Set Pressures (Advanced)" type="pressure_controller_setup.set_pressures_adv.MyPlugin" base_class_type="rqt_gui_py::Plugin">
     <description>
       Manual control of individual pressures with reconfigurable GUI
