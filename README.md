@@ -46,4 +46,4 @@ Ctrl-P has three parts:
 - [ROS Driver](https://github.com/cbteeple/pressure_control_cbt): controls pressure via serial or RawUSB
 
 Related Packages:
-- [Pressure Controller Skills](https://github.com/cbteeple/pressure_controller_skills): Build complex parametric skills using straightforward definition files.
+- [Pressure Controller Skills](https://github.com/cbteeple/pressure_controller_skills): build complex parametric skills using straightforward definition files.
