@@ -41,6 +41,9 @@ This driver is split into two ROS packages:
 The Ctrl-P project is a full-stack pneumatic control system featuring smooth control of pressure at a high bandwidth.
 
 Ctrl-P has three parts:
-- [Arduino-Based Firmware](https://github.com/cbteeple/pressure_controller)
-- [Python Control Interface](https://github.com/cbteeple/pressure_control_interface)
-- [ROS Driver](https://github.com/cbteeple/pressure_control_cbt)
+- [Arduino-Based Firmware](https://github.com/cbteeple/pressure_controller): contains the low-level control
+- [Python Control Interface](https://github.com/cbteeple/pressure_control_interface): controls pressure via serial comms
+- [ROS Driver](https://github.com/cbteeple/pressure_control_cbt): controls pressure via serial or RawUSB
+
+Related Packages:
+- [Pressure Controlelr Skills](https://github.com/cbteeple/pressure_controller_skills): Build complex parametric skills using straightforward definition files.
