@@ -1,4 +1,4 @@
-# Ctrl-P: ROS Driver
+# Ctrl-P 2.0: ROS Driver
 A module to do pressure control in ROS with a Ctrl-P pressure control system.
 
 ## Versions
