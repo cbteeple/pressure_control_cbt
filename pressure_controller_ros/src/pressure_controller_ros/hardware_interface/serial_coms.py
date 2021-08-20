@@ -65,7 +65,7 @@ class SerialComs:
 		self.s.reset_output_buffer()
 
 
-	def sendCommand(self, command, values):		
+	def sendCommand(self, command, values, format="%0.2f"):		
 		"""
 		Send commands to the device
 

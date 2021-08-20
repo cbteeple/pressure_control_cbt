@@ -18,7 +18,6 @@ import numbers
 import numpy as np
 import copy
 import yaml
-import threading
 
 filepath_default = os.path.join('..','trajectories')
 
@@ -147,7 +146,12 @@ class trajSender:
 
     def execute_traj(self, traj_goal, blocking=True):
         #try:
+        if self.DEBUG:
+            print(traj_goal)
         self.traj_client.send_goal(traj_goal)
+
+        if self.DEBUG:
+            print('Sent Trajectory')
 
         if blocking:
             self.traj_client.wait_for_result()
@@ -190,7 +194,7 @@ class trajSender:
 
 
 
-    def shutdown(self, reset_pressures=None):
+    def shutdown(self, reset=None):
         print('HAND CONTROLLER: Cancel current goals')
         self.traj_client.cancel_all_goals()
 
