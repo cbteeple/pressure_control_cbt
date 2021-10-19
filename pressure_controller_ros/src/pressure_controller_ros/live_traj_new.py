@@ -126,15 +126,15 @@ class trajSender:
         self.send_command("echo",False,wait_for_ack = False)      
         self.send_command("on",[],wait_for_ack = False)
 
-        print('Waiting for current state')
+        #print('Waiting for current state')
         current_states = rospy.wait_for_message("/"+self._name+"/pressure_data", DataIn)
-        print('Got current state')
+        #print('Got current state')
 
         goal_tmp = PressureTrajectoryGoal()
         goal_tmp.trajectory = PressureTrajectory()
 
-        print(len(current_states.measured),current_states.measured)
-        print(len(self.start_pressures),self.start_pressures)
+        #print(len(current_states.measured),current_states.measured)
+        #print(len(self.start_pressures),self.start_pressures)
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=current_states.measured, time_from_start=rospy.Duration(0.0)))
         goal_tmp.trajectory.points.append(PressureTrajectoryPoint(pressures=self.start_pressures, time_from_start=rospy.Duration(traj_goal[0][0])))
 
@@ -206,16 +206,16 @@ class trajSender:
             print('HAND CONTROLLER: Switching to direct pressure control mode')
             self.send_command("mode",3)
             
-        if reset_pressures is not None:
+        if reset is not None:
             print('HAND CONTROLLER: Setting resting pressures')
 
-            if reset_pressures == 'resting':
+            if reset == 'resting':
                 out_press= copy.deepcopy(self.start_pressures)
                 out_press.insert(0, 2)
                 print(out_press)
                 self.send_command("set",out_press)
             else:
-                self.send_command("set",reset_pressures)
+                self.send_command("set",reset)
 
         self.send_command("echo",False, wait_for_ack=False)
         self.command_client.cancel_all_goals()
