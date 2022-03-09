@@ -47,7 +47,7 @@ class HIDComs:
 		except:
 			self.connected=False
 			print("HID ERROR: Maybe the device is unplugged?")
-			pass
+			raise
 
 
 	def get_device(self, vendor_id, product_id, serial_number=None):

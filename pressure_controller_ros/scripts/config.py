@@ -29,52 +29,73 @@ class configSender:
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
-        self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction) 
-        self._client.wait_for_server()
+                
 
         self.config = rospy.get_param(rospy.get_name())
 
         config_name = self.config.get("profile_name","")
 
-        print("CONFIG: Sending Config Profile '%s'"%(config_name))  
+        print("CONFIG: Sending Config Profile '%s'"%(config_name)) 
+        if self.config:
+            if config_name.startswith("dynamixel"):
+                self._client = actionlib.SimpleActionClient('dynamixel', pressure_controller_ros.msg.CommandAction)         
+                self._client.wait_for_server()
+            else:
+                self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction) 
+                self._client.wait_for_server() 
 
 
     def set_config(self):
 
         if self.config:
-            self.send_command("_flush",[])
-            self.send_command("echo",True)
-            self.send_command("load",[])  
-            self.send_command("off",[])
-            self.send_command("chan",1)
-            self.send_command("mode",0)
-            self.send_command("valve",-1)
-            self.send_command("valve",0)
-            
-            self.num_channels = self.config.get("channels").get("num_channels")
-            
-            self.send_command("chan",self.config.get("channels").get("states"))
-            self.send_command("maxp", self.config.get("max_pressure") )
-            self.send_command("minp", self.config.get("min_pressure") )
+            if self.config.get("profile_name").startswith("dynamixel"):    
+                            
+                self.send_command("off",[])
+                
+                self.send_command("max", self.config.get("max_pressure") )
+                self.send_command("min", self.config.get("min_pressure") )
 
-            
-            self.handle_pid()
-            
-            self.send_command("time",int(self.config.get("data_loop_time")))
-            self.send_command("valve",0)
+                self.send_command("speed",self.config.get("speed"))
 
-            if self.config.get("transitions")>0:
-                self.send_command("mode",3)
             else:
-                self.send_command("mode",1)
+                self.send_command("_flush",[])
+                self.send_command("echo",True)
+                self.send_command("load",[])  
+                self.send_command("off",[])
+                self.send_command("chan",1)
+                self.send_command("mode",0)
+                self.send_command("valve",-1)
+                self.send_command("valve",0)
+                
+                self.num_channels = self.config.get("channels").get("num_channels")
+                
+                self.send_command("chan",self.config.get("channels").get("states"))
+                self.send_command("maxp", self.config.get("max_pressure") )
+                self.send_command("minp", self.config.get("min_pressure") )
 
-            self.send_command("currtime",0)
-            self.send_command("save",[], wait_for_ack=False)
+                
+                self.handle_pid()
+                
+                self.send_command("time",int(self.config.get("data_loop_time")))
+                self.send_command("valve",0)
 
-            self.send_command("on",[])
-            time.sleep(3.0)
-            self.send_command("off",[])
-            self.send_command("echo",bool(self.config.get("echo")))
+                if self.config.get("transitions")>0:
+                    self.send_command("mode",3)
+                else:
+                    self.send_command("mode",1)
+
+                self.send_command("currtime",0)
+                self.send_command("save",[], wait_for_ack=False)
+
+                self.send_command("on",[])
+                time.sleep(3.0)
+                self.send_command("off",[])
+                self.send_command("echo",bool(self.config.get("echo")))
+
+            
+
+           
+
 
 
     def send_command(self, command, args, wait_for_ack = True):
@@ -114,24 +135,16 @@ class configSender:
 
 
 
-    def shutdown(self):
+    def shutdown(self):        
         self._client.cancel_all_goals()
         #self.bond.break_bond()
 
-        
-
-
-        
-        
-
-
-
-
+    
 if __name__ == '__main__':
     try:
-        rospy.init_node('config_node', disable_signals=True)
-        node = configSender()
-        node.set_config()
+        rospy.init_node('config_node', disable_signals=True)        
+        node = configSender()        
+        node.set_config()        
         node.shutdown()
         print("CONFIG: Config Sent") 
 
