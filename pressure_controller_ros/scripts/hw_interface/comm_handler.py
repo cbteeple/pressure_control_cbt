@@ -28,6 +28,8 @@ class CommHandler(object):
         self.DEBUG =  rospy.get_param(rospy.get_name()+"/DEBUG",False)
         self.data_channel = rospy.get_param(rospy.get_name()+"/data_channel","pressure_control")
         self.use_separate_topics = rospy.get_param(rospy.get_name()+"/separate_topics" , False)
+        self.cmd_sleep_time = rospy.get_param(rospy.get_name()+"/cmd_sleep_time" , 0.0)
+        self.read_poll_rate = rospy.get_param(rospy.get_name()+"/read_poll_rate" , 5000)
 
         self._action_name = name
         self.ack_buffer = []
@@ -52,11 +54,9 @@ class CommHandler(object):
             cmd_format = device.get('cmd_format',None)
 
             if devname is not None:
-                curr_dev = serial_coms.SerialComs(devname, baud, devnum=idx)
-                curr_dev.DEBUG = self.DEBUG
+                curr_dev = serial_coms.SerialComs(devname, baud, devnum=idx, debug=self.DEBUG)
             elif vendor_id is not None:
-                curr_dev = HID_coms.HIDComs(vendor_id, product_id, serial_number, devnum=idx)
-                curr_dev.DEBUG = self.DEBUG
+                curr_dev = HID_coms.HIDComs(vendor_id, product_id, serial_number, devnum=idx, debug=self.DEBUG)
             else:
                 curr_dev = None
             
@@ -95,7 +95,7 @@ class CommHandler(object):
         for idx,comm in enumerate(self.comms):
             if self.use_separate_topics:
                 self.pub_data_separate.append(rospy.Publisher(self.data_channel+'/pressure_data_%d'%(idx), msg.DataInSep, queue_size=10))
-            comm['interface'].start_read_thread(poll_rate=5000, reading_cb=self.process_serial_in)
+            comm['interface'].start_read_thread(poll_rate=self.read_poll_rate, reading_cb=self.process_serial_in)
         
         #self.sub_list=self.start_data_msg_condenser()
             
@@ -134,6 +134,9 @@ class CommHandler(object):
 
         validator=self.command_handler.validators[devnum]
         channel_nums = self.command_handler.num_chans
+
+        if self.DEBUG:
+            print("RAW SERIAL IN: %s"%(line_in))
 
 
         try:
@@ -288,7 +291,7 @@ class CommHandler(object):
     '''
     def cmd_server_thread(self):
         try:
-            server = command_server.CommandAction(self.data_channel, self.comms, self.command_handler)
+            server = command_server.CommandAction(self.data_channel, self.comms, self.command_handler, self.cmd_sleep_time)
             print("COMMAND SERVER: Ready!")
             rospy.spin()
 

@@ -1,7 +1,9 @@
 # ROS node settings
 traj_server_rate: 20 # Should be < 40 Hz for serial comms
+cmd_sleep_time: 0.2 # seconds
 data_channel: "dynamixel"
 use_traj_server: True
+
 
 # Serial device info
 devices:

@@ -42,20 +42,21 @@ class configSender:
                 self._client.wait_for_server()
             else:
                 self._client = actionlib.SimpleActionClient('pressure_control', pressure_controller_ros.msg.CommandAction) 
-                self._client.wait_for_server() 
+                self._client.wait_for_server()
 
 
     def set_config(self):
 
         if self.config:
-            if self.config.get("profile_name").startswith("dynamixel"):    
-                            
-                self.send_command("off",[])
-                
-                self.send_command("max", self.config.get("max_pressure") )
-                self.send_command("min", self.config.get("min_pressure") )
-
+            if self.config.get("profile_name").startswith("dynamixel"):
+                time.sleep(1.0)
+                self.send_command("_flush",[])
+                self.send_command("echo",True, wait_for_ack=False)       
+                self.send_command("off",[], wait_for_ack=False)
+                self.send_command("max", self.config.get("max_pressure"))
+                self.send_command("min", self.config.get("min_pressure"))
                 self.send_command("speed",self.config.get("speed"))
+                self.send_command("echo",bool(self.config.get("echo")), wait_for_ack=False)
 
             else:
                 self.send_command("_flush",[])
@@ -109,7 +110,6 @@ class configSender:
             raise ('Something went wrong and a setting was not validated')
         else:
             pass
-
 
 
 

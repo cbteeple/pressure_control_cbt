@@ -30,7 +30,7 @@ OUTPUTS:
 	s - the serial object created
 """	
 class HIDComs:
-	def __init__(self, vendor_id, product_id, serial_number=None, devnum=0):
+	def __init__(self, vendor_id, product_id, serial_number=None, devnum=0, debug=False):
 		self.connected = False
 		try:
 			self.h = self.get_device(vendor_id, product_id, serial_number)
@@ -39,7 +39,7 @@ class HIDComs:
 			# enable non-blocking mode
 			self.h.set_nonblocking(1)
 
-			self.DEBUG = False
+			self.DEBUG = debug
 
 
 			

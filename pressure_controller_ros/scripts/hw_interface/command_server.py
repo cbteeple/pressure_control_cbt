@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import rospy
 import actionlib
 
@@ -16,12 +17,13 @@ class CommandAction(object):
     _feedback = msg.CommandFeedback()
     _result = msg.CommandResult()
 
-    def __init__(self, name, comms_obj, command_handler):
+    def __init__(self, name, comms_obj, command_handler, cmd_sleep_time=0.0):
 
         self.DEBUG = rospy.get_param(rospy.get_name()+"/DEBUG",False)
 
         self._action_name = name
         self.ack_buffer = []
+        self.cmd_sleep_time = cmd_sleep_time
 
         self.comms=comms_obj
 
@@ -119,6 +121,9 @@ class CommandAction(object):
                     self.ack_buffer = []
                     
                 self._feedback.success = True
+                
+                if self.cmd_sleep_time >0:
+                    time.sleep(self.cmd_sleep_time)
     
         
         

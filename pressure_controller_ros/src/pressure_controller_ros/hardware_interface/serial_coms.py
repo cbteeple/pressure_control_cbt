@@ -30,9 +30,9 @@ OUTPUTS:
 	s - the serial object created
 """	
 class SerialComs:
-	def __init__(self, devname,baud, devnum=0):
+	def __init__(self, devname,baud, devnum=0, debug=False):
 		self.connected = False
-		self.DEBUG = False
+		self.DEBUG = debug
 		self.devnum = devnum
 		try:
 			if self.DEBUG:
@@ -177,11 +177,14 @@ class SerialReadWriteThreaded:
 			if self.new_command.is_set():
 				
 				if self.DEBUG:
+					print('\n')
 					self.curr_send_time = rospy.get_rostime().to_nsec()
 					print("SEND: %0.4f ms"%((self.curr_send_time-self.last_send_time)/1000000.0))
 					self.last_send_time = self.curr_send_time
+					print("Command String: %s"%(self.command_toSend))
+					print('\n')
 				
-				self.s.write(self.command_toSend +'\n')
+				self.s.write(self.command_toSend)
 				self.new_command.clear()
 
 			raw_reading = self.readStuff()
